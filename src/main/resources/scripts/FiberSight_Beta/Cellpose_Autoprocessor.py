@@ -28,7 +28,7 @@ if __name__ in ['__builtin__','__main__']:
 
 	base_path = os.path.dirname(str(import_dir))
 	roi_dir = os.path.join(base_path, "cellpose_rois")
-	os.mkdir(roi_dir, 0755) if not os.path.isdir(roi_dir) else None
+	os.mkdir(roi_dir, 755) if not os.path.isdir(roi_dir) else None
 	# Run the batch_open_images() function using the Scripting Parameters.
 	image_paths = batch_open_images(import_dir,
 								split_string(file_types),
@@ -49,7 +49,7 @@ if __name__ in ['__builtin__','__main__']:
 		imp = IJ.getImage()
 		print(imp)
 		print(image_path)
-		runCellpose(imp)
+		runCellpose(imp, cellposeDiameter=0)
 		imp_mask = IJ.getImage()
 		image.hide()
 		IJ.run(imp_mask, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
