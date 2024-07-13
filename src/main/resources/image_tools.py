@@ -205,15 +205,17 @@ def detectMultiChannel(image):
 	return multichannel
 
 
-def runCellpose(image, cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
+def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
 	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
 	print "Running Cellpose Segmentation algorithm"
-	cellposeModel="cyto2"
 	
-	cellpose_str = "diameter="+str(cellposeDiameter)+" cellproba_threshold="+str(cellposeProbability)+ " flow_threshold="+str(cellposeFlowThreshold)+" model="+cellposeModel+" nuclei_channel="+str(nucChannel)+" cyto_channel="+str(cytoChannel)+" dimensionmode=2D"+" anisotropy="+str(anisotropy)+" diam_threshold="+str(diam_threshold) +" stitch_threshold=-1"+" omni=False"+" cluster=False"+" additional_flags=''"
+	cellpose_str = cellposeModel=str(cellposeModel)+ " diameter="+str(cellposeDiameter)+" cellproba_threshold="+str(cellposeProbability)+ " flow_threshold="+str(cellposeFlowThreshold)+" model="+cellposeModel+" nuclei_channel="+str(nucChannel)+" cyto_channel="+str(cytoChannel)+" dimensionmode=2D"+" anisotropy="+str(anisotropy)+" diam_threshold="+str(diam_threshold) +" stitch_threshold=-1"+" omni=False"+" cluster=False"+" additional_flags=''"
 
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
-		IJ.run(image, "Cellpose Advanced", cellpose_str)
+		try:
+			IJ.run(image, "Cellpose Advanced", cellpose_str)
+		except:
+			pass
 	else:
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 	

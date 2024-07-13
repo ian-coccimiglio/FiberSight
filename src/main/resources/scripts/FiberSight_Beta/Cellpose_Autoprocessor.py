@@ -5,7 +5,8 @@
 #@ String(label='Filter', value='') filters
 #@ String(visibility=MESSAGE, value="<html>Set 0 if the images are single-channel</html>") docChannel
 #@ Integer (label="Border Channel", min=0, max=10, value=4) segChan
-
+#@ Integer (label="Object Diameter", min=0, max=200, value=0) cellposeDiam
+ 
 ''' Cellpose Autoprocessor. 
 1) Loads in a directory
 2) Creates a directory for (flattened/processed) images
@@ -28,7 +29,7 @@ if __name__ in ['__builtin__','__main__']:
 
 	base_path = os.path.dirname(str(import_dir))
 	roi_dir = os.path.join(base_path, "cellpose_rois")
-	os.mkdir(roi_dir, 755) if not os.path.isdir(roi_dir) else None
+	os.mkdir(roi_dir) if not os.path.isdir(roi_dir) else None
 	# Run the batch_open_images() function using the Scripting Parameters.
 	image_paths = batch_open_images(import_dir,
 								split_string(file_types),
@@ -49,11 +50,14 @@ if __name__ in ['__builtin__','__main__']:
 		imp = IJ.getImage()
 		print(imp)
 		print(image_path)
-		runCellpose(imp, cellposeDiameter=0)
-		imp_mask = IJ.getImage()
-		image.hide()
-		IJ.run(imp_mask, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
-		rm = RoiManager()
-		rm_fiber = rm.getRoiManager()
-		cellpose_roi_path = os.path.join(roi_dir,str(imp_mask.title)+"_RoiSet.zip")
-		rm_fiber.save(cellpose_roi_path)
+		try:
+			runCellpose(imp, cellposeModel="cyto3", cellposeDiameter=cellposeDiam)
+			imp_mask = IJ.getImage()
+			image.hide()
+			IJ.run(imp_mask, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
+			rm = RoiManager()
+			rm_fiber = rm.getRoiManager()
+			cellpose_roi_path = os.path.join(roi_dir,str(imp_mask.title)+"_RoiSet.zip")
+			rm_fiber.save(cellpose_roi_path)
+		except:
+			pass
