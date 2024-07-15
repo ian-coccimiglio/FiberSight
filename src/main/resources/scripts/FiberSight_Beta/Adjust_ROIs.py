@@ -8,7 +8,7 @@ from java.awt import Color
 from ij.gui import WaitForUserDialog
 from ij.measure import ResultsTable
 from java.awt.event import KeyListener, KeyAdapter
-from jy_tools import closeAll, list_files
+from jy_tools import closeAll, list_files, match_files
 from image_tools import clean_ROIs, read_image
 
 def getImageAndRoiPaths(sample_name, raw_dir, border_dir):
