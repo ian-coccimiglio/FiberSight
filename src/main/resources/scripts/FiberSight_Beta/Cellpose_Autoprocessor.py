@@ -40,24 +40,20 @@ if __name__ in ['__builtin__','__main__']:
 		IJ.run("Close All")
 		closeAll()
 		# Call the toString() method of each ImagePlus object
-		image = IJ.openImage(image_path)
-		print(image)
-		if detectMultiChannel(image):
-			channels = ChannelSplitter.split(image)
+		imp = IJ.openImage(image_path)
+		print(imp)
+		if detectMultiChannel(imp):
+			channels = ChannelSplitter.split(imp)
 			channels[segChan-1].show() # Selects the channel to segment, offset by 1 for indexing
 		else:
-			image.show()
+			imp.show()
 		imp = IJ.getImage()
 		print(imp)
-		print(image_path)
+		print(imp_path)
 		try:
 			runCellpose(imp, cellposeModel="cyto3", cellposeDiameter=cellposeDiam)
-			imp_mask = IJ.getImage()
-			image.hide()
-			IJ.run(imp_mask, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
-			rm = RoiManager()
-			rm_fiber = rm.getRoiManager()
-			cellpose_roi_path = os.path.join(roi_dir,str(imp_mask.title)+"_RoiSet.zip")
-			rm_fiber.save(cellpose_roi_path)
+			imp_labels = IJ.getImage()
+			imp.hide()
+			convertLabelsToROIs(imp_labels)
 		except:
 			pass

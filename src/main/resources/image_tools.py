@@ -205,6 +205,17 @@ def detectMultiChannel(image):
 	return multichannel
 
 
+def convertLabelsToROIs(imp_labels):
+	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
+		IJ.run(imp_labels, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
+		rm = RoiManager()
+		rm_fiber = rm.getRoiManager()
+		cellpose_roi_path = os.path.join(roi_dir,str(imp_mask.title)+"_RoiSet.zip")
+		rm_fiber.save(cellpose_roi_path)
+	else:
+		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
+	return None
+
 def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
 	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
 	print "Running Cellpose Segmentation algorithm"
