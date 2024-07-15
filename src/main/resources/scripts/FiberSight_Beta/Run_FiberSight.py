@@ -20,36 +20,41 @@ from ij.gui import GenericDialog
 ## There should be scripts that are the independent modules which run in both FiberSight and FiberSight Batch
 
 ## Trained models should go in a folder, such as the Cellpose folder.
-# 
 # Why am I getting so tripped over the GUI. Build something crappy, improve it later.
-# 
 
-gd = GenericDialog("Analysis")
-buttons = ["Fibrosis Quantification", "CSA/Feret Analysis", "Central Nucleation Analysis", "Fiber-Type Quantification"]
-gd.addRadioButtonGroup("Name", buttons, 2, 2, "CSA/Feret")
-gd.setOKLabel("Run Analysis!")
-gd.showDialog()
-button = gd.getNextRadioButton()
+if __name__ in ['__builtin__','__main__']:
+	gd = GenericDialog("Analysis")
+	buttons = ["Fibrosis Quantification", "CSA/Feret Analysis", "Central Nucleation Analysis", "Fiber-Type Quantification"]
+	gd.addRadioButtonGroup("Name", buttons, 2, 2, "CSA/Feret")
+	gd.setOKLabel("Run Analysis!")
+	gd.showDialog()
+	button = gd.getNextRadioButton()
+	
+	# If they select whichever one, do that analysis
+	
+	if button == "Fibrosis Quantification":
+		# Works on WGA Fluorescence/PSR Brightfield
+		# print button
+		IJ.run("Adjust ROIs", "mychoice=Drawing")
+	#	IJ.run(
+		
+	#	IJ.run("") # Run the WGA analysis script
+	#	IJ.run("Draw ROIs", "" )
+	elif button == "CSA/Feret Analysis":
+		print button
+		
+	#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
+	#	IJ.run("Cellpose Advanced", "") # Run cellpose, initalize manual editing
 
-# If they select whichever one, do that analysis
-
-if button == "Fibrosis Quantification":
-	print button
-#	IJ.run("") # Run the WGA analysis script
-elif button == "CSA/Feret Analysis":
-	print button
-#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
-	IJ.run("Cellpose Advanced", "") # Run cellpose, initalize manual editing
-	IJ.run("Draw ROIs", "" )
-	IJ.run("", "")
-	IJ.run()
-#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
-elif button == "Central Nucleation Analysis":
-	print button
-
-#	IJ.run("") # Run cellpose, perform central nucleation analysis
-elif button == "Fiber-Type Quantification":
-	print button
-#	IJ.run("") # Run cellpose, perform fibertype analysis on one image
-else:
-	print("Analysis not found")
+		IJ.run("", "")
+		IJ.run()
+	#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
+	elif button == "Central Nucleation Analysis":
+		print button
+	
+	#	IJ.run("") # Run cellpose, perform central nucleation analysis
+	elif button == "Fiber-Type Quantification":
+		print button
+		IJ.run("") # Run cellpose, perform fibertype analysis on one image
+	else:
+		print("Analysis not found")

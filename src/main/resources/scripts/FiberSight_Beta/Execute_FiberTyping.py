@@ -68,7 +68,7 @@ try:
 		raise IOError("There is no 'rois' directory in this folder, perhaps you need to choose experimental batch folder {}".format(dirpath))		
 	for folder in generated_folder_list:
 		if not os.path.isdir(folder):
-			os.mkdir(folder, 0755)
+			os.mkdir(folder)
 except IOError as e:
 	sys.exit(e)
 

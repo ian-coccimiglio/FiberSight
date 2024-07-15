@@ -9,44 +9,13 @@ from ij.gui import WaitForUserDialog
 from ij.measure import ResultsTable
 from java.awt.event import KeyListener, KeyAdapter
 from jy_tools import closeAll, list_files
-
-def read_image(file_path):
-	try:
-		if not os.path.exists(file_path):
-			raise IOError("The path provided does not exist: {}".format(file_path))
-		if not os.path.isfile(file_path):
-			raise ValueError("The path provided is not a file: {}".format(file_path))
-		return IJ.openImage(file_path)
-	except IOError as e:
-		print("An IOError occurred: ", e)
-		return None
-	except ValueError as e:
-		print(e)
-		return None
+from image_tools import clean_ROIs, read_image
 
 def getImageAndRoiPaths(sample_name, raw_dir, border_dir):
 	border_name = sample_name+"_border.roi"
 	image_path = os.path.join(raw_dir,sample_name+".nd2")
 	border_path = os.path.join(border_dir,border_name)
 	return (image_path, border_name, border_path)
-
-def clean_ROIs(rm, imp, minimum_area=1500):
-	'''Automatically removes ROIs that are too small'''
-	rm.runCommand(imp, "Measure")
-	rm.runCommand(imp, "Show None")
-	rt = ResultsTable().getResultsTable()
-	Areas = rt.getColumn("Area")
-	large_rois = []
-	for enum, area in enumerate(Areas):
-		if area > minimum_area:
-			large_rois.append(rm.getRoi(enum))
-	rm.close()
-	RM = RoiManager()
-	rm = RM.getRoiManager()
-	for roi in large_rois:
-		rm.addRoi(roi)
-	rm.runCommand(imp, "Show All with Labels")	
-	return rm
         
 class CustomKeyListener(KeyListener):
     def __init__(self, rm, imp):
@@ -108,7 +77,7 @@ try:
 		raise IOError("There is no 'raw' directory in this folder, perhaps you need to choose experimental batch folder {}".format(dirpath))
 	for folder in generated_folder_list:
 		if not os.path.isdir(folder):
-			os.mkdir(folder, 0755)
+			os.mkdir(folder)
 except IOError as e:
 	sys.exit(e)
 

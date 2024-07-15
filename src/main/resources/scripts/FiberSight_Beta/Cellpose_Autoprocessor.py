@@ -21,15 +21,15 @@ from ij import IJ, WindowManager as WM
 from ij.plugin import ChannelSplitter
 from ij.plugin.frame import RoiManager
 from jy_tools import closeAll, list_files
-from image_tools import runCellpose, detectMultiChannel, batch_open_images, split_string
+from image_tools import runCellpose, detectMultiChannel, batch_open_images, split_string, convertLabelsToROIs
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
 
 	base_path = os.path.dirname(str(import_dir))
-	roi_dir = os.path.join(base_path, "cellpose_rois")
-	os.mkdir(roi_dir) if not os.path.isdir(roi_dir) else None
+	cellpose_roi_dir = os.path.join(base_path, "cellpose_rois")
+	os.mkdir(cellpose_roi_dir) if not os.path.isdir(cellpose_roi_dir) else None
 	# Run the batch_open_images() function using the Scripting Parameters.
 	image_paths = batch_open_images(import_dir,
 								split_string(file_types),
@@ -39,21 +39,16 @@ if __name__ in ['__builtin__','__main__']:
 	for image_path in image_paths:
 		IJ.run("Close All")
 		closeAll()
-		# Call the toString() method of each ImagePlus object
 		imp = IJ.openImage(image_path)
-		print(imp)
 		if detectMultiChannel(imp):
 			channels = ChannelSplitter.split(imp)
 			channels[segChan-1].show() # Selects the channel to segment, offset by 1 for indexing
 		else:
 			imp.show()
 		imp = IJ.getImage()
-		print(imp)
-		print(imp_path)
-		try:
-			runCellpose(imp, cellposeModel="cyto3", cellposeDiameter=cellposeDiam)
-			imp_labels = IJ.getImage()
-			imp.hide()
-			convertLabelsToROIs(imp_labels)
-		except:
-			pass
+#		print(imp)
+#		print(image_path)
+		runCellpose(imp, cellposeModel="cyto3", cellposeDiameter=cellposeDiam)
+		imp_labels = IJ.getImage()
+		imp.hide()
+		convertLabelsToROIs(imp_labels, cellpose_roi_dir) # Saves the ROIs at the end

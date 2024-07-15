@@ -205,12 +205,12 @@ def detectMultiChannel(image):
 	return multichannel
 
 
-def convertLabelsToROIs(imp_labels):
+def convertLabelsToROIs(imp_labels, roi_dir):
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		IJ.run(imp_labels, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
 		rm = RoiManager()
 		rm_fiber = rm.getRoiManager()
-		cellpose_roi_path = os.path.join(roi_dir,str(imp_mask.title)+"_RoiSet.zip")
+		cellpose_roi_path = os.path.join(roi_dir,str(imp_labels.title)+"_RoiSet.zip")
 		rm_fiber.save(cellpose_roi_path)
 	else:
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
@@ -357,6 +357,38 @@ def runMyosightSegment(border_channel, param_dict):
 	IJ.run(mask_3, "Options...", "iterations=3 count=1 black do=Dilate")
 	checkPixel(mask_3)
 	IJ.run(mask_3, "Analyze Particles...", "size={Particle Size} circularity={Minimum Circularity}-1.00 show=Nothing display exclude summarize add in_situ".format(**param_dict))
+	return rm
+
+def read_image(file_path):
+	try:
+		if not os.path.exists(file_path):
+			raise IOError("The path provided does not exist: {}".format(file_path))
+		if not os.path.isfile(file_path):
+			raise ValueError("The path provided is not a file: {}".format(file_path))
+		return IJ.openImage(file_path)
+	except IOError as e:
+		print("An IOError occurred: ", e)
+		return None
+	except ValueError as e:
+		print(e)
+		return None
+
+def clean_ROIs(rm, imp, minimum_area=1500):
+	'''Automatically removes ROIs that are too small'''
+	rm.runCommand(imp, "Measure")
+	rm.runCommand(imp, "Show None")
+	rt = ResultsTable().getResultsTable()
+	Areas = rt.getColumn("Area")
+	large_rois = []
+	for enum, area in enumerate(Areas):
+		if area > minimum_area:
+			large_rois.append(rm.getRoi(enum))
+	rm.close()
+	RM = RoiManager()
+	rm = RM.getRoiManager()
+	for roi in large_rois:
+		rm.addRoi(roi)
+	rm.runCommand(imp, "Show All with Labels")	
 	return rm
 
 def roiRecolor(roi):
