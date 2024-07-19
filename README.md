@@ -13,8 +13,10 @@ Notes:
 
 (Example)
 Experiment\_folder/ 
-└── raw/ 
+└── raw/
+
     ├── sampleID1\_Day1.tif 
+
     └── sampleID2\_Day1.tif 
          └── ...
 
