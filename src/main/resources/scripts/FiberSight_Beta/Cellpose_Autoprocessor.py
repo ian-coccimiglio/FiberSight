@@ -6,7 +6,8 @@
 #@ String(visibility=MESSAGE, value="<html>Set 0 if the images are single-channel</html>") docChannel
 #@ Integer (label="Border Channel", min=0, max=10, value=4) segChan
 #@ Integer (label="Object Diameter", min=0, max=200, value=0) cellposeDiam
- 
+#@ String (choices={"cyto3", "cyto2", "PSR", "WGA"}, description="The type of model to use", value="cyto2", style="radioButtonHorizontal") model
+
 ''' Cellpose Autoprocessor. 
 1) Loads in a directory
 2) Creates a directory for (flattened/processed) images
@@ -23,7 +24,7 @@ from ij.plugin.frame import RoiManager
 from jy_tools import closeAll, list_files
 from image_tools import runCellpose, detectMultiChannel, batch_open_images, split_string, convertLabelsToROIs
 
-if __name__ in ['__builtin__','__main__']:
+def main():
 	IJ.run("Close All")
 	closeAll()
 
@@ -39,16 +40,13 @@ if __name__ in ['__builtin__','__main__']:
 	for image_path in image_paths:
 		IJ.run("Close All")
 		closeAll()
-		imp = IJ.openImage(image_path)
-		if detectMultiChannel(imp):
-			channels = ChannelSplitter.split(imp)
-			channels[segChan-1].show() # Selects the channel to segment, offset by 1 for indexing
-		else:
-			imp.show()
-		imp = IJ.getImage()
-#		print(imp)
-#		print(image_path)
-		runCellpose(imp, cellposeModel="cyto3", cellposeDiameter=cellposeDiam)
-		imp_labels = IJ.getImage()
-		imp.hide()
-		convertLabelsToROIs(imp_labels, cellpose_roi_dir) # Saves the ROIs at the end
+		save_rois=True
+		image_string = "raw_path="+image_path+" segchan="+str(segChan)+" cellposediam="+str(cellposeDiam)+" model="+str(model)+" save_rois="+str(save_rois)
+		print image_string
+		IJ.run("Cellpose Image", image_string)
+#		imp_labels = IJ.getImage()
+#		imp.hide()
+#		convertLabelsToROIs(imp_labels, cellpose_roi_dir) # Saves the ROIs at the end
+
+if __name__ in ['__builtin__','__main__']:
+	main()

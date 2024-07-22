@@ -12,40 +12,7 @@ from ij.plugin.frame import RoiManager
 from ij.measure import ResultsTable
 from datetime import datetime
 from jy_tools import closeAll, saveFigure, list_files, match_files
-from image_tools import renameChannels
-
-def determine_Dominant_Fiber(dom_list, channel_keys, lrow):
-	ck_names = [ck.split('_%')[0].split("MHC")[1] for ck in channel_keys]
-	if lrow[0] >= 50: # Type 1
-		dom_list.append(ck_names[0])
-	elif lrow[2] >= 50: 
-		if lrow[1] >= 50:
-			dom_list.append(ck_names[2]+"/"+ck_names[1]) # Type IIa/IIX
-		else:
-			dom_list.append(ck_names[2]) # Type IIa
-	elif lrow[2] < 50:
-		if lrow[1] >= 50:
-			dom_list.append(ck_names[1]) # Type IIx
-		else:
-			dom_list.append("UND") # Type UND
-			
-	return dom_list
-
-def generate_Results(multichannel_dict, ch_list):
-	dom_list = []
-	result_dict = {}
-	zipped_data = zip(*multichannel_dict.values())
-	for enum, row in enumerate(zipped_data):
-		if all([math.isnan(r) for r in row]):
-			row = [0,0,0]
-			zipped_data[enum] = row
-		lrow = list(row)
-		result_dict[enum] = list(zipped_data[enum])
-		channel_keys = multichannel_dict.keys()
-		dom_list = determine_Dominant_Fiber(dom_list, channel_keys, lrow)
-
-	return dom_list, result_dict
-
+from image_tools import renameChannels, generate_ft_results
 
 print ""
 print "### Starting Muscle Fiber Typing Analysis ###"
@@ -145,7 +112,7 @@ for enum, (raw, roi) in enumerate(matched_files):
 		IJ.run("Clear Results", "")
 		saveFigure(channel_dup, "Png", mask_path+"_")
 			
-	identified_fiber_type, areas = generate_Results(area_frac, ch_list)
+	identified_fiber_type, areas = generate_ft_results(area_frac, ch_list)
 	IJ.run("Set Measurements...", "area display add redirect=None decimal=3");
 	rm_fiber.runCommand("Measure")
 	rt = ResultsTable().getResultsTable()
