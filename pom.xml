@@ -104,9 +104,9 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
+			<groupId>ch.epfl.biop</groupId>
+			<artifactId>LaRoMe</artifactId>
+			<version>0.3.2</version>
 		</dependency>
 		<dependency>
     			<groupId>org.codehaus.mojo</groupId>

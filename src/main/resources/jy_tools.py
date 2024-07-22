@@ -15,7 +15,7 @@ def reload_modules():
 			del(sys.modules[mod])
 
 def make_directories(main_path, folder_names):
-	if isinstance(folder_names, str):
+	if not isinstance(folder_names, list):
 		folder_names = [folder_names]
 	try:
 		folder_paths = []
