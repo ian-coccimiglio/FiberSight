@@ -205,22 +205,34 @@ def detectMultiChannel(image):
 	return multichannel
 
 
-def convertLabelsToROIs(imp_labels, roi_dir):
+def convertLabelsToROIs(imp_labels):
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		IJ.run(imp_labels, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
 		rm = RoiManager()
 		rm_fiber = rm.getRoiManager()
-		cellpose_roi_path = os.path.join(roi_dir,str(imp_labels.title)+"_RoiSet.zip")
-		rm_fiber.save(cellpose_roi_path)
+		return rm_fiber
 	else:
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
-	return None
+		return None
 
 def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
 	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
 	print "Running Cellpose Segmentation algorithm"
 	
-	cellpose_str = cellposeModel=str(cellposeModel)+ " diameter="+str(cellposeDiameter)+" cellproba_threshold="+str(cellposeProbability)+ " flow_threshold="+str(cellposeFlowThreshold)+" model="+cellposeModel+" nuclei_channel="+str(nucChannel)+" cyto_channel="+str(cytoChannel)+" dimensionmode=2D"+" anisotropy="+str(anisotropy)+" diam_threshold="+str(diam_threshold) +" stitch_threshold=-1"+" omni=False"+" cluster=False"+" additional_flags=''"
+	cellpose_str = cellposeModel=str(cellposeModel)+ \
+	" diameter="+str(cellposeDiameter)+ \
+	" cellproba_threshold="+str(cellposeProbability)+ \
+	" flow_threshold="+str(cellposeFlowThreshold)+ \
+	" model="+cellposeModel+ \
+	" nuclei_channel="+str(nucChannel)+ \
+	" cyto_channel="+str(cytoChannel)+ \
+	" dimensionmode=2D"+ \
+	" anisotropy="+str(anisotropy)+ \
+	" diam_threshold="+str(diam_threshold) + \
+	" stitch_threshold=-1"+ \
+	" omni=False"+ \
+	" cluster=False"+ \
+	" additional_flags=''"
 
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
@@ -279,6 +291,39 @@ def getMyosightParameters():
 	
 	dprint(paramDict) # print the dictionary
 	return paramDict
+
+
+def determine_dominant_fiber(dom_list, channel_keys, lrow):
+	ck_names = [ck.split('_%')[0].split("MHC")[1] for ck in channel_keys]
+	if lrow[0] >= 50: # Type 1
+		dom_list.append(ck_names[0])
+	elif lrow[2] >= 50: 
+		if lrow[1] >= 50:
+			dom_list.append(ck_names[2]+"/"+ck_names[1]) # Type IIa/IIX
+		else:
+			dom_list.append(ck_names[2]) # Type IIa
+	elif lrow[2] < 50:
+		if lrow[1] >= 50:
+			dom_list.append(ck_names[1]) # Type IIx
+		else:
+			dom_list.append("UND") # Type UND
+			
+	return dom_list
+
+def generate_ft_results(multichannel_dict, ch_list):
+	dom_list = []
+	result_dict = {}
+	zipped_data = zip(*multichannel_dict.values())
+	for enum, row in enumerate(zipped_data):
+		if all([math.isnan(r) for r in row]):
+			row = [0,0,0]
+			zipped_data[enum] = row
+		lrow = list(row)
+		result_dict[enum] = list(zipped_data[enum])
+		channel_keys = multichannel_dict.keys()
+		dom_list = determine_dominant_fiber(dom_list, channel_keys, lrow)
+
+	return dom_list, result_dict
 
 def generateCheckDialog(title,checktext):
 	'''Generates a dialog with a single checkbox with message `checktext` '''

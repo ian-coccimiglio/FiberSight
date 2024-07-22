@@ -22,6 +22,14 @@ from ij.gui import GenericDialog
 ## Trained models should go in a folder, such as the Cellpose folder.
 # Why am I getting so tripped over the GUI. Build something crappy, improve it later.
 
+# OK, from the main terminal...
+# Run either fibersight or fibersight batch
+# Subfolder of utilities
+# A run of fibertyping would...
+## First, run Cellpose on an image. Save both cellpose_rois and cellpose_labels.
+## Second, draw borders.
+## Third, draw
+
 if __name__ in ['__builtin__','__main__']:
 	gd = GenericDialog("Analysis")
 	buttons = ["Fibrosis Quantification", "CSA/Feret Analysis", "Central Nucleation Analysis", "Fiber-Type Quantification"]
