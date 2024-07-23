@@ -8,7 +8,6 @@ from ij.measure import ResultsTable
 import os, sys
 from java.awt import Color
 from ij.gui import WaitForUserDialog
-from ij.measure import ResultsTable
 from jy_tools import closeAll, list_files, match_files, make_directories
 from image_tools import remove_small_rois, read_image, editRoi
 

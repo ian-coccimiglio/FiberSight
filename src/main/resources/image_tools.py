@@ -476,7 +476,7 @@ def editRoi(image_path, roi_path):
 	rm.runCommand(imp,"Remove Channel Info");
 	imp.getCanvas().addKeyListener(CustomKeyListener(rm, imp))
 	
-	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw ROIs and hit 't' to add to manager, or delete ROIs from manager")
+	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw or Edit ROIs, hit 't' to add to manager")
 	roiWait.show()
 	if rm.getCount() == 0:
 		roi = imp.getRoi()

@@ -9,14 +9,11 @@ Complex/Compound ROIs will be processed correctly, but not multiple ROIs.
 ROI should not intersect with itself to ensure meaningful results.
 """
 
-
-from ij import IJ, Prefs, WindowManager as WM
+from ij import IJ
 from ij.plugin.frame import RoiManager
 from ij.measure import ResultsTable
 import os, sys
 from java.awt import Color
-from ij.gui import WaitForUserDialog
-from ij.measure import ResultsTable
 from jy_tools import closeAll, list_files, match_files, make_directories
 from image_tools import remove_small_rois, read_image, editRoi
 
@@ -38,11 +35,15 @@ border_name = os.path.basename(border_path)
 if border_name not in border_files:
 	IJ.log("Current Sample is: {}".format(raw_file))
 	rm, imp = editRoi(image_path, border_path)
+	IJ.log("### Saving ROI to {} ###".format(border_path))
 	rm.save(border_path)
 elif border_name in border_files and edit:
 	IJ.log("Current Sample is: {}".format(raw_file))
 	IJ.log("Border for {} already drawn, edit border if desired".format(raw_file))
 	rm, imp = editRoi(image_path, border_path)
+	IJ.log("### Saving ROI to {} ###".format(border_path))
 	rm.save(border_path)	
 else:
 	IJ.log("Border for {} already drawn, moving on".format(raw_file))
+
+IJ.log("Done!")
