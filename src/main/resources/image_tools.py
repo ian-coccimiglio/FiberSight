@@ -18,6 +18,7 @@ from math import sqrt
 from net.imagej.updater import UpdateService
 from collections import Counter, OrderedDict
 from java.awt import Color
+from java.awt.event import KeyListener, KeyAdapter
 #main_dir = os.path.dirname(os.path.abspath(__file__)) # path setting to the directory of the file
 #sys.path.append(main_dir)
 from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, test_Results, windowFind
@@ -418,10 +419,14 @@ def read_image(file_path):
 		print(e)
 		return None
 
-def clean_ROIs(rm, imp, minimum_area=1500):
+def remove_small_rois(rm, imp, minimum_area=1500):
 	'''Automatically removes ROIs that are too small'''
+	
+	IJ.log("### Cleaning ROIs that are too small ###")
+	
 	rm.runCommand(imp, "Measure")
 	rm.runCommand(imp, "Show None")
+	n_before = rm.getCount()
 	rt = ResultsTable().getResultsTable()
 	Areas = rt.getColumn("Area")
 	large_rois = []
@@ -433,8 +438,50 @@ def clean_ROIs(rm, imp, minimum_area=1500):
 	rm = RM.getRoiManager()
 	for roi in large_rois:
 		rm.addRoi(roi)
-	rm.runCommand(imp, "Show All with Labels")	
+	rm.runCommand(imp, "Show All with Labels")
+	n_after = rm.getCount()
+	IJ.log("### Removed {} ROIs ###".format(n_before-n_after))
 	return rm
+
+class CustomKeyListener(KeyListener):
+    def __init__(self, rm, imp):
+    	self.rm = rm
+    	self.imp = imp
+    	
+    def keyPressed(self, event):
+	    if (str(event.getKeyChar())) == "t":
+        	self.rm.runCommand(self.imp,"Remove Channel Info");
+
+    def keyReleased(self, event):
+        pass
+
+    def keyTyped(self, event):
+        pass
+
+
+def editRoi(image_path, roi_path):
+	Prefs.showAllSliceOnly = False; # Prevents ROIs from being interpreted per-slice
+
+	imp = read_image(image_path)
+	imp.show()
+	RM = RoiManager()
+	rm = RM.getRoiManager()
+	
+	if os.path.isfile(roi_path):
+		rm.open(roi_path)
+		rm.runCommand("Show All with Labels")
+		rm.select(0)
+
+	rm.deselect()
+	rm.runCommand(imp,"Remove Channel Info");
+	imp.getCanvas().addKeyListener(CustomKeyListener(rm, imp))
+	
+	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw ROIs and hit 't' to add to manager, or delete ROIs from manager")
+	roiWait.show()
+	if rm.getCount() == 0:
+		roi = imp.getRoi()
+		rm.addRoi(roi)
+	return rm, imp
 
 def roiRecolor(roi):
 	roi.setStrokeColor(Color.red)
