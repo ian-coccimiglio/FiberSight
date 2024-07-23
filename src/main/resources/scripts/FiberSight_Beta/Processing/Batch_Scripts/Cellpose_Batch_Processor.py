@@ -44,9 +44,6 @@ def main():
 		image_string = "raw_path="+image_path+" segchan="+str(segChan)+" cellposediam="+str(cellposeDiam)+" model="+str(model)+" save_rois="+str(save_rois)
 		print image_string
 		IJ.run("Cellpose Image", image_string)
-#		imp_labels = IJ.getImage()
-#		imp.hide()
-#		convertLabelsToROIs(imp_labels, cellpose_roi_dir) # Saves the ROIs at the end
 
 if __name__ in ['__builtin__','__main__']:
 	main()

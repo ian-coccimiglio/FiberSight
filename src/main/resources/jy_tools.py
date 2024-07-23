@@ -15,6 +15,7 @@ def reload_modules():
 			del(sys.modules[mod])
 
 def make_directories(main_path, folder_names):
+	IJ.log("### Generating Folders ###")
 	if not isinstance(folder_names, list):
 		folder_names = [folder_names]
 	try:
@@ -29,7 +30,7 @@ def make_directories(main_path, folder_names):
 				mode = int('755', 8) # octal representation
 				os.mkdir(folder_path, mode)
 			else:
-				print("Folder already exists: " + folder_path)
+				IJ.log("Folder already exists: {}".format(folder_path))
 	except IOError as e:
 		sys.exit(e)
 	return(folder_paths)
@@ -164,6 +165,10 @@ def match_files(files_a, files_b):
 				print(file_a+ " matches "+file_b)
 				matched_files.append((file_a, file_b))
 				break
+	if len(matched_files) == 0:
+		IJ.log("No matched files were found")
+	else:
+		IJ.log("Successfully matched {} pairs of files".format(len(matched_files)))
 	return matched_files
 
 # Tests

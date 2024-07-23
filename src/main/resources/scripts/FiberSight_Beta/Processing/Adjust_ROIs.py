@@ -8,14 +8,8 @@ from java.awt import Color
 from ij.gui import WaitForUserDialog
 from ij.measure import ResultsTable
 from java.awt.event import KeyListener, KeyAdapter
-from jy_tools import closeAll, list_files, match_files
+from jy_tools import closeAll, list_files, match_files, make_directories
 from image_tools import clean_ROIs, read_image
-
-def getImageAndRoiPaths(sample_name, raw_dir, border_dir):
-	border_name = sample_name+"_border.roi"
-	image_path = os.path.join(raw_dir,sample_name+".nd2")
-	border_path = os.path.join(border_dir,border_name)
-	return (image_path, border_name, border_path)
         
 class CustomKeyListener(KeyListener):
     def __init__(self, rm, imp):
@@ -45,13 +39,14 @@ def editRoi(image_path, roi_path, clean=True):
 	if os.path.isfile(roi_path):
 		rm.open(roi_path)
 		rm.runCommand("Show All with Labels")
+		rm.select(0)
 		n_before = rm.getCount()
 
 	if clean:
-		print "Cleaning ROIs that are too small"
+		IJ.log("### Cleaning ROIs that are too small ###")
 		rm = clean_ROIs(rm, imp, minArea)
 		n_after = rm.getCount()
-		print "Removed {} ROIs".format(n_before-n_after)
+		IJ.log("### Removed {} ROIs ###".format(n_before-n_after))
 
 	rm.deselect()
 	rm.runCommand(imp,"Remove Channel Info");
@@ -66,74 +61,59 @@ def editRoi(image_path, roi_path, clean=True):
 
 raw_dir = myDir.getAbsolutePath()
 experiment_dir = os.path.dirname(raw_dir)
-border_dir = os.path.join(experiment_dir, "WGA_Border/")
+border_dir = os.path.join(experiment_dir, "roi_border/")
 cellpose_roi_dir = os.path.join(experiment_dir, "cellpose_rois/")
 roi_dir = os.path.join(experiment_dir, "rois/")
 
-generated_folder_list = [cellpose_roi_dir, roi_dir, border_dir]
-
-try: 
-	if not os.path.exists(raw_dir):
-		raise IOError("There is no 'raw' directory in this folder, perhaps you need to choose experimental batch folder {}".format(dirpath))
-	for folder in generated_folder_list:
-		if not os.path.isdir(folder):
-			os.mkdir(folder)
-except IOError as e:
-	sys.exit(e)
+generated_folder_list = [cellpose_roi_dir, border_dir]
+make_directories(experiment_dir, generated_folder_list)
 
 raw_files = list_files(raw_dir)
-sample_names = ['.'.join(raw_file.split('.')[:-1]).split("_")[0] for raw_file in raw_files if not raw_file.startswith('.')]
-print sample_names
+# sample_names = ['.'.join(raw_file.split('.')[:-1]).split("_")[0] for raw_file in raw_files if not raw_file.startswith('.')]
+# print sample_names
 
 if myChoice == "Drawing":
-	print ""
-	print "### Drawing Skeletal Muscle Border ###"
+	IJ.log("\n### Drawing Skeletal Muscle Border ###")
 	border_files = list_files(border_dir)
 	for raw_file in raw_files:
-		sample_name = '.'.join(raw_file.split('.')[:-1]).split("_")[0]
 		IJ.run("Close All")
 		closeAll()
-		image_path, border_name, border_path = getImageAndRoiPaths(sample_name, raw_dir, border_dir)
+		IJ.setTool("polygon")
+		image_path = os.path.join(raw_dir, raw_file)
+		border_path = os.path.join(border_dir, raw_file.split(".")[0]+"_border.roi")
+		border_name = os.path.basename(border_path)
 		if border_name not in border_files:
-			print "Current Sample is: {}".format(sample_name)
+			IJ.log("Current Sample is: {}".format(raw_file))
 			rm, imp = editRoi(image_path, border_path, clean=False)
 			rm.save(border_path)
-	print "Done!"
+		else:
+			IJ.log("Border for {} already drawn, moving on".format(raw_file))
 
 if myChoice == "Edit_Borders":
-	print ""
-	print "### Editing Skeletal Muscle Border ###"
+	IJ.log("\n### Editing Skeletal Muscle Border ###")
 	border_files = list_files(border_dir)
 	matched_files = match_files(raw_files, border_files)
-	if len(matched_files) == 0:
-		print "No matched files were found"
-	else:
-		print "Successfully matched {} pairs of files".format(len(matched_files))
+
 	for raw_file, border_file in matched_files:
 		IJ.run("Close All")
 		closeAll()
-		sample_name = '.'.join(raw_file.split('.')[:-1]).split("_")[0]
-		print "Current Sample is: {}".format(sample_name)
-		image_path, border_name, border_path = getImageAndRoiPaths(sample_name, raw_dir, border_dir)
+		IJ.log("Current Sample is: {}".format(raw_file))
+		IJ.setTool("polygon")
+		image_path = os.path.join(raw_dir, raw_file)
+		border_path = os.path.join(border_dir, raw_file.split(".")[0]+"_border.roi")
+		border_name = os.path.basename(border_path)
 		rm, imp = editRoi(image_path, border_path, clean=False)
 		rm.getRoi(0).setStrokeWidth(8)
 		rm.runCommand("Show All without labels")
 		rm.save(border_path)
-	print "Done!"
-
 
 if myChoice == "Edit_Fibers":
-	print ""
-	print "### Editing segmented fibers from Cellpose ###"
+	IJ.log("\n### Editing segmented fibers from Cellpose ###")
 	cellpose_roi_files = list_files(cellpose_roi_dir)
 	matched_files = match_files(raw_files, cellpose_roi_files)
-	if len(matched_files) == 0:
-		print "No matched files were found"
-	else:
-		print "Successfully matched {} pairs of files".format(len(matched_files))
+
 	for raw_file, roi_file in matched_files:
-		sample_name = '.'.join(raw_file.split('.')[:-1]).split("_")[0]
-		print "Current Sample is: {}".format(sample_name)
+		IJ.log("Current Sample is: {}".format(raw_file))
 		IJ.run("Close All")
 		closeAll()
 		cellpose_roi_path = os.path.join(cellpose_roi_dir, roi_file)
@@ -143,6 +123,6 @@ if myChoice == "Edit_Fibers":
 		rm.runCommand("Show All without labels")
 		roi_path = os.path.join(roi_dir, sample_name+"_RoiSet.zip")
 		rm.save(roi_path)
-	print "Done!"
 	
 IJ.run("Close All")
+IJ.log("Done!")
