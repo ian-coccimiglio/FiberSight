@@ -5,12 +5,12 @@ from ij import IJ, WindowManager as WM
 from ij import Prefs
 from ij.plugin.frame import RoiManager
 import os
-from jy_tools import closeAll, attrs
+from jy_tools import closeAll, attrs, saveFigure
 from ij.gui import PolygonRoi, Roi
 from ij.plugin import ImageCalculator
 from ij.io import Opener
 from ij.plugin import RoiEnlarger, ChannelSplitter
-from image_tools import detectMultiChannel
+from image_tools import detectMultiChannel, pickImage
 
 def shrink_rois(rm, base_image):
 	"""
@@ -21,7 +21,8 @@ def shrink_rois(rm, base_image):
 	RM = RoiManager()
 	rm_small = RM.getRoiManager()
 	for enum, roi in enumerate(rois):
-		small_roi = RoiEnlarger.enlarge(roi, -1)
+		shrinkRadius=-1
+		small_roi = RoiEnlarger.enlarge(roi, shrinkRadius)
 		rm_small.addRoi(small_roi)
 	
 	IJ.run(base_image, "ROIs to Label image", "")
@@ -35,9 +36,12 @@ def separate_labels_on_gpu(label_image):
 	from net.haesleinhuepf.clij2 import CLIJ2
 	clij2 = CLIJ2.getInstance()
 	clij2.clear()
+	IJ.log("Separating Label Image: {}".format(label_image.title))
 	input_image = clij2.push(label_image)
 	separated_label_image = clij2.create(input_image)
-	clij2.erodeLabels(input_image, separated_label_image, 1.0, False)
+	erosionRadius=1.0
+	relabel_islands=False
+	clij2.erodeLabels(input_image, separated_label_image, erosionRadius, relabel_islands)
 	clij2.pull(separated_label_image).show()
 	separated_labels = IJ.getImage()
 	clij2.clear() # clean up
@@ -82,7 +86,7 @@ def make_excluded_edges(label_image, border_roi=None, rm=None):
 		rm.runCommand("Show All")
 	return(edgeless)
 	
-def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_path_str, separate_rois=True, GPU=True):
+def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_path_str, separate_rois=True, GPU=True, selected_channel=3):
 	"""
 	Exclude borders when starting from only ROIs, not label images.
 	
@@ -99,9 +103,10 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 	if detectMultiChannel(imp_raw):
 		IJ.log("Multiple channels detected; splitting image")
 		channels = ChannelSplitter.split(imp_raw)
-		channels[-1].show() # Selects the channel to segment, offset by 1 for indexing
+		channels[selected_channel].show() # Selects the channel to segment, offset by 1 for indexing
 		imp_raw.hide()
-	
+	else:
+		imp_raw.show()
 	imp_base = IJ.getImage()
 	imp_base.show()
 
@@ -110,30 +115,51 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 
 	RM = RoiManager()
 	rm_fibers = RM.getRoiManager()
-
+	rm_fibers.open(fiber_rois_path_str)
+	IJ.log("Number of ROIs Before Edge Removal: {}".format(rm_fibers.getCount()))
+	r2l_prefix="ROIs2Label_"
+	# IJ.log("Separate ROIs is: {}".format(separate_rois))
+	# IJ.log("GPU is: {}".format(separate_rois))
 	if separate_rois == True:
-		rm_fibers.open(fiber_rois_path_str)
 		if GPU and any([plugin.startswith("clij2_") for plugin in os.listdir(IJ.getDirectory("plugins"))]):
 			IJ.log("CLIJ2 plugin found!")
 			IJ.log("### Converting ROIs to Label image ###")
 			IJ.run("ROIs to Label image", "")
-			label_image = IJ.getImage()
+			label_image_title = r2l_prefix+imp_base.title
+			label_image = pickImage(label_image_title)
+			IJ.log("### Separating Labels by GPU Label Erosion ###")
 			separated_labels = separate_labels_on_gpu(label_image)
 			separated_labels.hide()
 			label_image.hide()
+			IJ.log("### Running Excluded Edge ###")
 			edgeless = make_excluded_edges(separated_labels, border_roi=border_roi)
 		else:
 			IJ.log("CLIJ2 plugin not found!")
-			IJ.log("### Converting ROIs to Label image ###")
+			IJ.log("### Separating Labels by ROI Erosion ###")
 			rm_small = shrink_rois(rm_fibers, imp_base)
-			edgeless = make_excluded_edges(separated_labels, rm=rm_small)
-		IJ.log("### Separated Labels ###")
-		edgeless.setRoi(border_roi, True)
-		imp_base.setRoi(border_roi, True)
-		IJ.run(imp_base, "Add Image...", "image=Labels_Excluded_Edge x=0 y=0 opacity=50");
-		IJ.run(imp_base, "Add Selection...", "")
-		IJ.log("Done!")
-	return edgeless
+			IJ.log("### Converting ROIs to Label image ###")
+			IJ.run("ROIs to Label image", "")
+			separated_label_image_title = r2l_prefix+imp_base.title
+			separated_label_image = pickImage(separated_label_image_title)
+			separated_label_image.hide()
+			IJ.log("### Running Excluded Edge ###")
+			edgeless = make_excluded_edges(separated_label_image, border_roi=border_roi)
+	else:
+		IJ.log("### Converting ROIs to Label image ###")
+		IJ.run("ROIs to Label image", "")
+		label_image = IJ.getImage()
+		IJ.log("### Running Excluded Edge ###")
+		edgeless = make_excluded_edges(label_image, border_roi=border_roi)
+	
+	edgeless.setRoi(border_roi, True)
+	imp_base.setRoi(border_roi, True)
+	
+	IJ.run(imp_base, "Add Image...", "image=Labels_Excluded_Edge x=0 y=0 opacity=50");
+	IJ.run(imp_base, "Add Selection...", "")
+	IJ.run(edgeless, "Add Selection...", "")
+	
+	IJ.log("Done!")
+	return edgeless, imp_base
 			
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
