@@ -42,7 +42,7 @@ def main():
 		closeAll()
 		save_rois=True
 		image_string = "raw_path="+image_path+" segchan="+str(segChan)+" cellposediam="+str(cellposeDiam)+" model="+str(model)+" save_rois="+str(save_rois)
-		print image_string
+		IJ.log(image_string)
 		IJ.run("Cellpose Image", image_string)
 
 if __name__ in ['__builtin__','__main__']:
