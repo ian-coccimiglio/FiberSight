@@ -21,16 +21,16 @@ def make_directories(main_path, folder_names):
 	try:
 		folder_paths = []
 		if not os.path.exists(main_path):
-			raise IOError("There is no 'raw' directory in this folder, perhaps you need to choose experimental batch folder {}".format(main_path))
+			raise IOError("This does not point to a directory, perhaps you need to choose a different folder from this one: {}".format(main_path))
 		for folder_name in folder_names:
 			folder_path = os.path.join(main_path, folder_name)
 			folder_paths.append(folder_path)
 			if not os.path.isdir(folder_path):
-				print("Making directory: " + folder_path)
+				IJ.log("Making directory: {}".format(folder_path))
 				mode = int('755', 8) # octal representation
 				os.mkdir(folder_path, mode)
 			else:
-				IJ.log("Folder already exists: {}".format(folder_path))
+				IJ.log("Using existing folder: {}".format(folder_path))
 	except IOError as e:
 		sys.exit(e)
 	return(folder_paths)
@@ -138,7 +138,7 @@ def closeAll():
 def saveFigure(figure, filetype, figure_dir):
 	''' Saves a figure in specified filetype '''
 	name = figure.title
-	figure_location = figure_dir + name
+	figure_location = os.path.join(figure_dir, name)
 	IJ.saveAs(figure, filetype, figure_location)
 
 def dirMake(inDir):
@@ -146,9 +146,8 @@ def dirMake(inDir):
 	if not os.path.exists(inDir):
 		os.makedirs(inDir)
 
-def match_files(files_a, files_b):
-	'''Matches files based on everything before the first underscore.
-	The file ID should be everything before the first underscore,
+def match_files(files_a, files_b, split_string="_"):
+	'''Matches files based on everything before the split string
 	'''
 	matched_files = []
 	if not type(files_a) == list:
@@ -157,10 +156,10 @@ def match_files(files_a, files_b):
 		files_b = [files_b]
 	for file_a in files_a:
 		a_noExt = file_a.split('.')[:-1]
-		sample_id_a = '.'.join(a_noExt).split("_")[0]
+		sample_id_a = '.'.join(a_noExt).split(split_string)[0]
 		for file_b in files_b:
 			b_noExt = file_b.split('.')[:-1]
-			sample_id_b = '.'.join(b_noExt).split("_")[0]
+			sample_id_b = '.'.join(b_noExt).split(split_string)[0]
 			if sample_id_a in sample_id_b:
 				print(file_a+ " matches "+file_b)
 				matched_files.append((file_a, file_b))
