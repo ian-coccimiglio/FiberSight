@@ -1,5 +1,5 @@
 #@ String (value="Select an experimental batch directory", visibility=MESSAGE, required=false) doc
-#@ File (label="Select an experimental batch directory", style="directory") myDir
+#@ File (label="Select an experimental batch directory", style="directory") my_dir
 #@ Integer (label="Font Size", style=slider, min=6, max=24, value=16) fontSize
 #@ Integer (label="MHCI", style=slider, min=0, max=65535, value=1000) MHCI
 #@ Integer (label="MHCIIa", style=slider, min=0, max=65535, value=1000) MHCIIa
@@ -11,33 +11,23 @@ from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.measure import ResultsTable
 from datetime import datetime
-from jy_tools import closeAll, saveFigure, list_files, match_files
+from jy_tools import closeAll, saveFigure, list_files, match_files, make_directories
 from image_tools import renameChannels, generate_ft_results
 
-print ""
-print "### Starting Muscle Fiber Typing Analysis ###"
+IJ.log("\n### Starting Muscle Fiber Typing Analysis ###")
 
-dirpath = myDir.getAbsolutePath()
-raw_dir = os.path.join(dirpath, 'raw/')
-roi_dir = os.path.join(dirpath, 'rois/')
-results_dir = os.path.join(dirpath, 'results/')
-figure_dir = os.path.join(dirpath, 'figures/')
-mask_dir = os.path.join(dirpath, 'masks/')
-metadata_dir = os.path.join(dirpath, 'metadata/')
-generated_folder_list = [results_dir, figure_dir, mask_dir, metadata_dir]
+dir_path = my_dir.getAbsolutePath()
+raw_dir = os.path.join(dir_path, 'raw/')
+roi_dir = os.path.join(dir_path, 'rois/')
+results_dir = os.path.join(dir_path, 'results/')
+figure_dir = os.path.join(dir_path, 'figures/')
+mask_dir = os.path.join(dir_path, 'masks/')
+metadata_dir = os.path.join(dir_path, 'metadata/')
+cellpose_roi_dir = os.path.join(dir_path, 'cellpose_rois/')
 
-cellpose_roi_dir = os.path.join(dirpath, 'cellpose_rois/')
+generated_folder_list = [results_dir, figure_dir, mask_dir, metadata_dir, cellpose_roi_dir]
 
-try: 
-	if not os.path.exists(raw_dir):
-		raise IOError("There is no 'raw' directory in this folder, perhaps you need to choose experimental batch folder {}".format(dirpath))
-	if not os.path.exists(roi_dir):
-		raise IOError("There is no 'rois' directory in this folder, perhaps you need to choose experimental batch folder {}".format(dirpath))		
-	for folder in generated_folder_list:
-		if not os.path.isdir(folder):
-			os.mkdir(folder)
-except IOError as e:
-	sys.exit(e)
+make_directories(dir_path, generated_folder_list)
 
 raw_files = list_files(raw_dir)
 roi_files = list_files(roi_dir)

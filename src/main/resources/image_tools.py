@@ -171,38 +171,37 @@ def selectSingleChannel(items):
 		sys.exit(0)
 	return gd.getNextRadioButton()
 
-def selectChannels(items):
+def selectChannels(items, show_gui=True):
 	''' Sets channels and returns the image settings and ROI availability '''
+	if show_gui:
+		IJ.log("### Selecting Channels ###")
+		
+		channels = []
+		channelMarker = {}
 	
-	print "\n### Selecting Channels ###"
-
-	channels = []
-	for enum, item in enumerate(items):
-		channels.append("Channel " + str(enum+1))
-	channels.append("None")
-	gd = GenericDialog("Choose Channels")	
+		for enum, item in enumerate(items):
+			channels.append("Channel " + str(enum+1))
+		channels.append("None")
 	
-	for enum, item in enumerate(items):
-		if item == "DAPI":
-			gd.addChoice(item, channels, "Channel 1")
-		elif item == "Fiber Borders":
-			gd.addChoice(item, channels, "Channel 3")
-		else:
+		gd = GenericDialog("Choose Channels")	
+		
+		for enum, item in enumerate(items):
 			gd.addChoice(item, channels, "None")
+	
+		gd.showDialog()
+		
+		choices = gd.getChoices()
+			
+		for enum, item in enumerate(items):
+			channelMarker[item] = choices[enum].getSelectedItem()
+		return channelMarker
+	else:
+		return None
 
-	gd.showDialog()
-	
-	choices = gd.getChoices()
-	channelMarker = {}
-	
-	for enum, item in enumerate(items):
-		channelMarker[item] = choices[enum].getSelectedItem()
-	
-	return channelMarker
 
 def detectMultiChannel(image):
 	multichannel = image.getNChannels() > 1 
-	print "Image has more than 1 channel" if multichannel else "Image has one channel."	
+	IJ.log("Image has more than 1 channel" if multichannel else "Image has one channel.")	
 	return multichannel
 
 
@@ -294,6 +293,115 @@ def getMyosightParameters():
 	return paramDict
 
 
+def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
+	"""
+	Classifies the fiber type from a list of ['I', 'IIa', 'IIx'] and associated percentages
+	
+	Parameters
+	----------
+	fiber_type_keys : list of str
+		List of keys formatted as strings 'I', 'IIa', 'IIx'
+	perc 			: list of float or int
+		List of percentages formatted as floats/integers
+	T1_hybrid		" bool
+		Boolean value indicating whether to count I/IIa hybrids
+
+	Notes
+	-----
+	Input does not have to include all 3 fiber types.
+	
+	Classification Rules
+	--------------------
+	- A fiber must be thresholded over 50% to be classified
+	
+	- If a fiber has 0 classifications:
+		- Classify as UND-, as thresholding couldn't determine the fiber-type.
+	
+	- If a fiber has only 1 classification:
+		- Classify as single-type (I, IIa, IIx)
+	
+	- If a fiber has 2 classifications:
+		- I+IIa: Whichever channel is greater gets classified as either Type I or IIa
+			- If T1_hybrid is True, classify as I/IIa
+		- IIa+IIx: Hybrid IIa/IIx fiber
+		- I+IIx: UND (Undetermined, non-canonical)
+	
+	- If a fiber has 3 classifications, then:
+		- I+IIa+IIx: Classify fiber as UND+ (Undetermined, non-canonical). Possibly over-thresholded.
+	
+	- In all other cases:
+		- Return "ERR" as an error code.
+		
+	Returns
+	-------
+	str String indicating assessed fiber type. Possible values are:
+        - 'I'
+        - 'IIa'
+        - 'IIx'
+        - 'I/IIa'
+        - 'IIa/IIx'
+        - 'UND'
+        - 'UND-'
+        - 'UND+'
+        - 'ERR'
+	"""
+	fiber_props = {key:val for key, val in zip(fiber_type_keys,perc)}
+	t = []
+	
+	for fiber, prop in fiber_props.items():
+		if fiber == "I":
+			if prop >= 50:
+				t.append(fiber)
+		if fiber == "IIa":
+			if prop >= 50:
+				t.append(fiber)
+		if fiber == "IIx":
+			if prop >= 50:
+				t.append(fiber)
+
+	if len(t) == 0:
+		ft = "UND-"
+	elif len(t) == 1:
+		ft = t[0]
+	elif len(t) == 2:
+		if(set(t) == set(["I", "IIa"])):
+			# This assumes no hybrid I/IIa
+			if T1_hybrid:
+				ft = "I/IIa"
+			if fiber_props["I"] >= fiber_props["IIa"]:
+				ft = "I"
+			else:
+				ft = "IIa"
+		if(set(t) == set(["I", "IIx"])):
+			ft = "UND"
+		if(set(t) == set(["IIa", "IIx"])):
+			ft = "IIa/IIx"
+	elif len(t) == 3:
+		ft = "UND+"
+	else:
+		ft = "ERR"
+	
+	return(ft)
+
+def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False):
+	dom_list = []
+	result_dict = {}
+	zipped_data = zip(*multichannel_dict.values())
+	fiber_type_keys = [key.split(" ")[1].split("_%")[0] for key in multichannel_dict]
+	IJ.log("### Determining Fiber Types ###")
+	if set(fiber_type_keys).issubset(set([u"I", u"IIa", u"IIx"])):
+		IJ.log("Fiber type keys are valid")
+	else:
+		IJ.log("Fiber type keys invalid")
+	for enum, row in enumerate(zipped_data):
+		if all([math.isnan(r) for r in row]):
+			row = [0 for r in row]
+			zipped_data[enum] = row
+		lrow = list(row)
+		result_dict[enum] = list(zipped_data[enum])
+		dom_list.append(determine_fiber_type(fiber_type_keys, lrow, T1_hybrid=T1_hybrid))
+	return dom_list, result_dict
+
 def determine_dominant_fiber(dom_list, channel_keys, lrow):
 	ck_names = [ck.split('_%')[0].split("MHC")[1] for ck in channel_keys]
 	if lrow[0] >= 50: # Type 1
@@ -310,21 +418,6 @@ def determine_dominant_fiber(dom_list, channel_keys, lrow):
 			dom_list.append("UND") # Type UND
 			
 	return dom_list
-
-def generate_ft_results(multichannel_dict, ch_list):
-	dom_list = []
-	result_dict = {}
-	zipped_data = zip(*multichannel_dict.values())
-	for enum, row in enumerate(zipped_data):
-		if all([math.isnan(r) for r in row]):
-			row = [0,0,0]
-			zipped_data[enum] = row
-		lrow = list(row)
-		result_dict[enum] = list(zipped_data[enum])
-		channel_keys = multichannel_dict.keys()
-		dom_list = determine_dominant_fiber(dom_list, channel_keys, lrow)
-
-	return dom_list, result_dict
 
 def generateCheckDialog(title,checktext):
 	'''Generates a dialog with a single checkbox with message `checktext` '''
