@@ -6,10 +6,11 @@
 #@ String (label = "Channel 2", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c2
 #@ String (label = "Channel 3", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c3
 #@ String (label = "Channel 4", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c4
-#@ Integer (label="Type I Threshold", style=spinner, min=0, max=65535, value=100) mhci
-#@ Integer (label="Type IIa Threshold", style=spinner, min=0, max=65535, value=100) mhciia
-#@ Integer (label="Type IIx Threshold", style=spinner, min=0, max=65535, value=100) mhciix
+#@ String (label = "Threshold Method", choices={"Mean", "Otsu", "Huang"}, style="radioButtonHorizontal", value="Mean") threshold_method
 #@ Boolean (label="Save Results?", value=True) save_res
+##@ Integer (label="Type I Threshold", style=spinner, min=0, max=65535, value=100) mhci
+##@ Integer (label="Type IIa Threshold", style=spinner, min=0, max=65535, value=100) mhciia
+##@ Integer (label="Type IIx Threshold", style=spinner, min=0, max=65535, value=100) mhciix
 
 import os, sys, math
 from collections import OrderedDict, Counter
@@ -37,13 +38,14 @@ metadata_dir = folder_paths[3]
 ft_figure_dir = make_directories(figure_dir, "fiber_type")[0]
 ft_mask_dir = make_directories(masks_dir, "fiber_type")[0]
 
-selectedThresholds = {"Type I": mhci, "Type IIa": mhciia, "Type IIx": mhciix}
+# selectedThresholds = {"Type I": mhci, "Type IIa": mhciia, "Type IIx": mhciix}
 
 IJ.run("Close All")
 closeAll() # ensures any open ROI managers are closed
 IJ.run("Clear Results")
 IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
-sample_name = my_image.getName().split(".")[0]
+#sample_name = my_image.getName().split(".")[0]
+sample_name = ".".join(my_image.getName().split(".")[0:-1])
 
 results_path = os.path.join(results_dir, sample_name + "_results.csv")
 ft_figure_path = os.path.join(ft_figure_dir, sample_name + "_FiberType")
@@ -67,7 +69,7 @@ channel_remap = {key:(value if value != "None" else None) for (key, value) in ch
 border_dir = os.path.join(experiment_dir, "roi_border")
 for drawn_border in os.listdir(border_dir):
 	if sample_name in drawn_border:
-		IJ.log("Getting ROI border for visualization")
+		IJ.log("### Getting ROI border for visualization ###")
 		border_path = os.path.join(border_dir, drawn_border)
 		op_roi = Opener()
 		border_roi = op_roi.openRoi(border_path)
@@ -95,7 +97,6 @@ area_frac = OrderedDict()
 #if border_roi is not None:
 #	threshold_method="Default"
 #else:
-threshold_method="Mean"
 
 for channel in ft_channels:
 	IJ.log("### Processing channel {} ###".format(channel.title))
@@ -176,7 +177,7 @@ IJ.run("From ROI Manager", "") #
 IJ.run(composite, "Labels...",  "color=yellow font="+str(fontSize)+" show use bold")
 
 if border_roi is not None:
-	IJ.log("### Clearing area outside border ###")
+	IJ.log("### Drawing outer border ###")
 	composite.setRoi(border_roi)
 	#IJ.run(channel, "Clear Outside", "");
 	IJ.run(composite, "Add Selection...", "")
@@ -196,7 +197,7 @@ for fibertype in c.most_common(8):
 if save_res:
 	IJ.log("### Saving Results ###")
 	IJ.saveAs(composite, "Jpg", ft_figure_path)
-	IJ.saveAs("Results", results_path+".csv")
+	IJ.saveAs("Results", results_path)
 
 ## Cleaning Up #
 IJ.log("### Cleaning up ###")

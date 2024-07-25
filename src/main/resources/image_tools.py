@@ -347,7 +347,7 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
 	"""
 	fiber_props = {key:val for key, val in zip(fiber_type_keys,perc)}
 	t = []
-	prop_threshold = 40
+	prop_threshold = 50
 	for fiber, prop in fiber_props.items():
 		if fiber == "I":
 			if prop >= prop_threshold:
@@ -539,20 +539,20 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 	IJ.run("Clear Results", "")
 	return rm_filtered
 
-class CustomKeyListener(KeyListener):
-    def __init__(self, rm, imp):
-    	self.rm = rm
-    	self.imp = imp
-    	
-    def keyPressed(self, event):
-	    if (str(event.getKeyChar())) == "t":
-        	self.rm.runCommand(self.imp,"Remove Channel Info");
-
-    def keyReleased(self, event):
-        pass
-
-    def keyTyped(self, event):
-        pass
+#class CustomKeyListener(KeyListener):
+#    def __init__(self, rm, imp):
+#    	self.rm = rm
+#    	self.imp = imp
+#    	
+#    def keyPressed(self, event):
+#	    if (str(event.getKeyChar())) == "t":
+#        	self.rm.runCommand(self.imp,"Remove Channel Info");
+#
+#    def keyReleased(self, event):
+#        pass
+#
+#    def keyTyped(self, event):
+#        pass
 
 
 def editRoi(image_path, roi_path):
@@ -570,7 +570,7 @@ def editRoi(image_path, roi_path):
 
 	rm.deselect()
 	rm.runCommand(imp,"Remove Channel Info");
-	imp.getCanvas().addKeyListener(CustomKeyListener(rm, imp))
+#	imp.getCanvas().addKeyListener(CustomKeyListener(rm, imp))
 	
 	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw or Edit ROIs, hit 't' to add to manager")
 	roiWait.show()

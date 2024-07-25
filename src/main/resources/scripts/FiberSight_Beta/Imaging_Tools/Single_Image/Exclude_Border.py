@@ -31,7 +31,7 @@ edgeless, imp_base = ROI_border_exclusion(border_roi_path_str, fiber_roi_path_st
 rm = convertLabelsToROIs(edgeless)
 IJ.log("Number of ROIs After Edge Removal: {}".format(rm.getCount()))
 
-sample_name = os.path.basename(raw_image_path_str).split(".")[0]
+sample_name = ".".join(os.path.basename(raw_image_path_str).split(".")[0:-1])
 roi_save_path = os.path.join(base_dir, border_excluded_dir, sample_name+"_RoiSet.zip")
 inside_border_save_path = os.path.join(base_dir, figure_dir_name, inside_border_dir_name)
 rm.save(roi_save_path)
