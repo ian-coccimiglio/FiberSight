@@ -67,7 +67,7 @@ channel_remap = {key:(value if value != "None" else None) for (key, value) in ch
 border_dir = os.path.join(experiment_dir, "roi_border")
 for drawn_border in os.listdir(border_dir):
 	if sample_name in drawn_border:
-		IJ.log("Using border to clearing exterior")
+		IJ.log("Getting ROI border for visualization")
 		border_path = os.path.join(border_dir, drawn_border)
 		op_roi = Opener()
 		border_roi = op_roi.openRoi(border_path)
@@ -91,18 +91,15 @@ ft_channels = map(WM.getImage, WM.getIDList())
 
 ch_list = []
 area_frac = OrderedDict()
-if border_roi is not None:
-	threshold_method="Otsu"
-else:
-	threshold_method="Mean"
+
+#if border_roi is not None:
+#	threshold_method="Default"
+#else:
+threshold_method="Mean"
 
 for channel in ft_channels:
 	IJ.log("### Processing channel {} ###".format(channel.title))
 	IJ.selectWindow(channel.title)
-	if border_roi is not None:
-		IJ.log("### Clearing area outside border ###")
-		channel.setRoi(border_roi)
-		IJ.run(channel, "Clear Outside", "");
 	channel_dup = channel.duplicate()
 	rm_fiber.runCommand("Show All")
 	IJ.run(channel, "Enhance Contrast", "saturated=0.35")
@@ -132,8 +129,12 @@ for channel in ft_channels:
 	IJ.run("Clear Results", "")
 	channel_dup.setTitle(channel_dup.title.split('_')[1].replace(' ', '-'))
 	IJ.log("Saving channel mask: {}".format(channel_dup.title))
+	if border_roi is not None:
+		IJ.log("### Clearing area outside border ###")
+		channel_dup.setRoi(border_roi)
+		IJ.run(channel_dup, "Clear Outside", "");
 	if save_res:
-		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title)
+		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
 
 IJ.log("### Identifying fiber types ### ")
 identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False)
@@ -157,6 +158,7 @@ if "Type I_%-Area" in area_frac.keys():
 if "Border" in [ft_channel.title for ft_channel in ft_channels]:
 	composite_list.append("c3=[Border]")
 
+
 IJ.log("Number of results: {}".format(rt.getCounter()))
 for n in range(rt.getCounter()):
 	rt.setValue("Fiber Type", n, identified_fiber_type[n])
@@ -172,6 +174,12 @@ for label in range(rm_fiber.getCount()):
 rm_fiber.runCommand(composite, "Show All with Labels")
 IJ.run("From ROI Manager", "") # 
 IJ.run(composite, "Labels...",  "color=yellow font="+str(fontSize)+" show use bold")
+
+if border_roi is not None:
+	IJ.log("### Clearing area outside border ###")
+	composite.setRoi(border_roi)
+	#IJ.run(channel, "Clear Outside", "");
+	IJ.run(composite, "Add Selection...", "")
 
 ## Diagnostics ##
 IJ.log("### Counting Fiber Types ###")
