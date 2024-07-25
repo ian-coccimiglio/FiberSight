@@ -21,17 +21,21 @@ border_roi_list = list_files(border_roi_dir_name)
 
 make_directories(experiment_dir, metadata_dir)
 metadata_dir = os.path.join(experiment_dir, metadata_dir)
-metadata_path = os.path.join(log_dir, "Log_Border_Removal-{}".format(datetime.today().strftime('%Y-%m-%d'))+".txt")
+metadata_path = os.path.join(metadata_dir, "Log_Border_Removal-{}".format(datetime.today().strftime('%Y-%m-%d'))+".txt")
 matched_files_BI = match_files(border_roi_list, image_list)
 matched_files_BF = match_files(border_roi_list, fiber_roi_list, "_border")
 
 extension = set([im.split(".")[-1] for im in image_list])
+
+separate_rois = "True" if separate_rois == 1 else "False"
+gpu = "True" if gpu == 1 else "False"
+
 if len(extension) > 1:
 	IJ.error("Error: More than one file type in raw files")
 else: 
 	ext = '.'+''.join(extension)
 
-for enum, (border_roi, fiber_rois) in enumerate(matched_files):
+for enum, (border_roi, fiber_rois) in enumerate(matched_files_BF):
 	IJ.run("Close All")
 	sample_name = border_roi.split("_border")[0]
 	im_path = os.path.join(raw_image_dir_name, sample_name+ext)
@@ -40,7 +44,7 @@ for enum, (border_roi, fiber_rois) in enumerate(matched_files):
 
 	if os.path.exists(im_path):
 		IJ.log("### Running Border Exclusion on {} ###".format(border_roi))
-		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".format(border_path, fiber_path, im_path, str(separate_rois), str(gpu)))
+		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".format(border_path, fiber_path, im_path, separate_rois, gpu))
 
 # Saving Log
 IJ.saveString(IJ.getLog(), metadata_path)

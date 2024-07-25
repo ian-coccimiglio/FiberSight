@@ -28,7 +28,7 @@ IJ.run("Close All")
 closeAll()
 IJ.setTool("polygon")
 image_path = os.path.join(raw_dir, raw_file)
-border_path = os.path.join(border_dir, raw_file.split(".")[0]+"_border.roi")
+border_path = os.path.join(border_dir, ".".join(raw_file.split(".")[0:-1])+"_border.roi")
 border_files = list_files(border_dir)
 border_name = os.path.basename(border_path)
 

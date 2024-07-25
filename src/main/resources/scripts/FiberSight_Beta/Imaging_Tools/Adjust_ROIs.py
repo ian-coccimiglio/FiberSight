@@ -24,13 +24,15 @@ raw_files = list_files(raw_dir)
 # sample_names = ['.'.join(raw_file.split('.')[:-1]).split("_")[0] for raw_file in raw_files if not raw_file.startswith('.')]
 # print sample_names
 
+edit = "True" if edit == 1 else "False"
+
 if my_choice == "Draw Borders":
 	IJ.log("\n### Drawing Skeletal Muscle Border ###")
 	IJ.run("Close All")
 	closeAll()
 	for raw_file in raw_files:
 		image_path = os.path.join(raw_dir, raw_file)
-		IJ.run("Draw Border", "my_image={} edit={}".format(os.path.join(raw_file), edit))
+		IJ.run("Draw Border", "raw_path={} edit={}".format(os.path.join(raw_dir, raw_file), edit))
 
 if my_choice == "Edit Fibers":
 	IJ.log("\n### Editing segmented fibers from Cellpose ###")
@@ -48,6 +50,7 @@ if my_choice == "Edit Fibers":
 		rm.runCommand("Show All without labels")
 		roi_path = os.path.join(roi_dir, sample_name+"_RoiSet.zip")
 		rm.save(roi_path)
-	
+
+closeAll()
 IJ.run("Close All")
 IJ.log("Done!")
