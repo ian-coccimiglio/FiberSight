@@ -44,6 +44,8 @@ IJ.run("Close All")
 closeAll()
 IJ.run("Clear Results", "")
 
+save_res = "True" if save_res == 1 else "False"
+
 for enum, (raw_file, fiber_rois) in enumerate(matched_files):
 	raw_path = os.path.join(str(raw_image_dir), raw_file)
 	roi_path = os.path.join(str(roi_dir), fiber_rois)
@@ -57,7 +59,7 @@ IJ.log("Saving analysis metadata")
 def log_metadata(metadata):
     for key, value in metadata.items():
         IJ.log("{}: {}".format(key, value))
-
+        
 metadata = OrderedDict([
     ('Date and time of analysis', datetime.now().replace(microsecond=0)),
 #    ('MHCI threshold value', str(MHCI)),
