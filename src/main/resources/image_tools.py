@@ -347,16 +347,16 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
 	"""
 	fiber_props = {key:val for key, val in zip(fiber_type_keys,perc)}
 	t = []
-	
+	prop_threshold = 40
 	for fiber, prop in fiber_props.items():
 		if fiber == "I":
-			if prop >= 50:
+			if prop >= prop_threshold:
 				t.append(fiber)
 		if fiber == "IIa":
-			if prop >= 50:
+			if prop >= prop_threshold:
 				t.append(fiber)
 		if fiber == "IIx":
-			if prop >= 50:
+			if prop >= prop_threshold:
 				t.append(fiber)
 
 	if len(t) == 0:
@@ -394,6 +394,7 @@ def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False):
 	else:
 		IJ.log("Fiber type keys invalid")
 	for enum, row in enumerate(zipped_data):
+		IJ.showProgress(enum, len(multichannel_dict.values()))
 		if all([math.isnan(r) for r in row]):
 			row = [0 for r in row]
 			zipped_data[enum] = row
@@ -520,6 +521,7 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 	rm.runCommand(imp, "Measure")
 	rm.runCommand(imp, "Show None")
 	n_before = rm.getCount()
+	IJ.log("Original: {} ROIs".format(n_before))
 	rt = ResultsTable().getResultsTable()
 	Areas = rt.getColumn("Area")
 	large_rois = []
@@ -528,13 +530,14 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 			large_rois.append(rm.getRoi(enum))
 	rm.close()
 	RM = RoiManager()
-	rm = RM.getRoiManager()
+	rm_filtered = RM.getRoiManager()
 	for roi in large_rois:
-		rm.addRoi(roi)
-	rm.runCommand(imp, "Show All with Labels")
-	n_after = rm.getCount()
-	IJ.log("### Removed {} ROIs ###".format(n_before-n_after))
-	return rm
+		rm_filtered.addRoi(roi)
+	rm_filtered.runCommand(imp, "Show All with Labels")
+	n_after = rm_filtered.getCount()
+	IJ.log("Removed {} ROIs".format(n_before-n_after))
+	IJ.run("Clear Results", "")
+	return rm_filtered
 
 class CustomKeyListener(KeyListener):
     def __init__(self, rm, imp):

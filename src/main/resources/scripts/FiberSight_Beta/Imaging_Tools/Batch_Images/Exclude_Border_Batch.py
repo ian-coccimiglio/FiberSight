@@ -12,15 +12,16 @@ from datetime import datetime
 border_roi_dir_name = str(border_roi_dir)
 fiber_roi_dir_name = str(fiber_roi_dir)
 raw_image_dir_name = str(raw_image_dir)
+metadata_dir = "metadata"
 experiment_dir = os.path.dirname(raw_image_dir_name)
 
 fiber_roi_list = list_files(fiber_roi_dir_name)
 image_list = list_files(raw_image_dir_name)
 border_roi_list = list_files(border_roi_dir_name)
 
-make_directories(experiment_dir, "Logs")
-log_dir = os.path.join(experiment_dir, "Logs")
-logpath = os.path.join(log_dir, "Log_Border_Removal-{}".format(datetime.today().strftime('%Y-%m-%d'))+".txt")
+make_directories(experiment_dir, metadata_dir)
+metadata_dir = os.path.join(experiment_dir, metadata_dir)
+metadata_path = os.path.join(log_dir, "Log_Border_Removal-{}".format(datetime.today().strftime('%Y-%m-%d'))+".txt")
 matched_files_BI = match_files(border_roi_list, image_list)
 matched_files_BF = match_files(border_roi_list, fiber_roi_list, "_border")
 
@@ -42,4 +43,4 @@ for enum, (border_roi, fiber_rois) in enumerate(matched_files):
 		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".format(border_path, fiber_path, im_path, str(separate_rois), str(gpu)))
 
 # Saving Log
-IJ.saveString(IJ.getLog(), logpath)
+IJ.saveString(IJ.getLog(), metadata_path)
