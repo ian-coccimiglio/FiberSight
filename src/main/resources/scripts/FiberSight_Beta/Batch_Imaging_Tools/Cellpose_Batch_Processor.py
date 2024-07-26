@@ -24,7 +24,7 @@ from ij.plugin.frame import RoiManager
 from jy_tools import closeAll, list_files, make_directories
 from image_tools import runCellpose, detectMultiChannel, batch_open_images, split_string, convertLabelsToROIs
 
-IJ.log("### Running Cellpose Batch mode ###"
+IJ.log("### Running Cellpose Batch mode ###")
 
 def main():
 	IJ.run("Close All")

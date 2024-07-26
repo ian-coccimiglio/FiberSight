@@ -140,7 +140,7 @@ for channel in ft_channels:
 IJ.log("### Identifying fiber types ### ")
 identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False)
 
-IJ.run("Set Measurements...", "area display add redirect=None decimal=3");
+IJ.run("Set Measurements...", "area feret's display add redirect=None decimal=3");
 
 IJ.log("### Measuring results ###")
 rm_fiber.runCommand("Measure")
@@ -163,8 +163,14 @@ if "Border" in [ft_channel.title for ft_channel in ft_channels]:
 IJ.log("Number of results: {}".format(rt.getCounter()))
 for n in range(rt.getCounter()):
 	rt.setValue("Fiber Type", n, identified_fiber_type[n])
-rt.show("Results")
 
+rt.show("Results")
+rt.deleteColumn("Feret")
+rt.deleteColumn("FeretX")
+rt.deleteColumn("FeretY")
+rt.deleteColumn("FeretAngle")
+rt.updateResults()
+ 
 IJ.log("### Making composite image ###")
 composite_string = " ".join(composite_list)
 IJ.run("Merge Channels...", composite_string+" create keep");
