@@ -447,7 +447,103 @@ def cropImage(figure):
 		gd.showDialog()
 		figure.close()
 		sys.exit(0)
-		
+
+def getCentroidPositions(rm):
+	'''Gets all the centroid positions without micron adjustments'''
+	x = []
+	y = []
+	for roi in rm.getRoisAsArray():
+		X, Y = roi.getContourCentroid()
+		x.append(X)
+		y.append(Y)
+	return (x, y)
+
+
+def findNdistances(x, y, xFib, yFib, nFibers, rm, nCheck):
+	nearestFibers = {}
+	nSignal = rm.getCount()
+	for loc in range(nSignal):
+		# fiber_distances is a list
+		fiber_distances = calculateDist(x[loc], y[loc], xFib, yFib, nFibers)
+		min_indices = findmin(fiber_distances, nCheck)
+		nearestFibers[loc] = min_indices
+		txt = "nuclei"
+		if (loc % 500 == 1):
+			IJ.showStatus("Calculating {} centroids".format(txt))
+			IJ.showProgress(loc, nSignal)
+			if (loc != 1):
+				print 'Finished {} nuclei out of {} total nuclei'.format(loc-1, nSignal)
+				
+		if (loc == nSignal-1):
+			IJ.showProgress(1)
+			print 'Done!'
+	return nearestFibers
+
+def drawCatch(NucX, NucY, FibX, FibY, imp, col = Color.RED):	
+	'''Draws a line from each nuclei pixel position to each fiber center pixel position '''
+	line = Line(NucX, NucY, FibX, FibY)
+	line.setWidth(2)
+	line.setStrokeColor(col)
+	imp.setRoi(line) # this actually does the drawing
+	IJ.run(imp, "Add Selection...", "")
+
+def mergeChannels(orig_channels, mergeTitle):
+	'''Merges channels into an RGB if there is more than one open. Otherwise, duplicates the Fiber Border channel.'''
+#	rm.runCommand("Show All without labels")
+	if len(orig_channels) > 1:
+		RGB = RGBStackMerge()
+		imp = RGB.mergeChannels(orig_channels, True)
+		imp.title = mergeTitle
+		imp.show()
+	else:
+		fb = pickImage("Fiber Borders")
+		IJ.run(fb, 'Duplicate...', "RGB")
+		imp = IJ.getImage()
+		imp.title = mergeTitle
+		imp.show()
+
+	return imp
+
+def findInNearestFibers(nearestFibers, rm, xCenter, yCenter, draw=None, imp=None, xFib=None, yFib=None):
+	'''Finds the number of markers in each muscle fiber.
+	Requires centroid positions of each marker of interest.
+	Parameters:
+	`nearestFibers` is a dictionary of lists, associating each item to its nearest fibers
+	`rm` is the ROI manager for the muscle fibers
+	`xCenter` and `yCenter` are the matched-list of coordinates for the centroid of each marker
+	`draw` is a boolean which determines if the result should be drawn on an image.'''
+	nTotal = rm.getCount()
+	countMarker = Counter()
+	countMarker.update({x:0 for x in range(1, rm.getCount()+1)})
+	
+	# write a function to simply count according to the mindex
+	for loc, vals in nearestFibers.items():
+		for mindex in vals:
+			roi = rm.getRoi(mindex)
+			if roi.containsPoint(xCenter[loc], yCenter[loc]):
+				countMarker[mindex+1]+=1
+				if draw is not None:
+					drawCatch(xCenter[loc], yCenter[loc], xFib[mindex], yFib[mindex], imp)
+				break
+		if (loc == nTotal-1):
+			print 'Done!'
+	print countMarker.most_common()
+	return countMarker
+
+def watershedParticles(image_title):
+	imp = pickImage(image_title)
+	imp_temp = imp.duplicate()
+	imp_temp.title = "{} Temp".format(imp.title)
+	IJ.setAutoThreshold(imp_temp, "Otsu dark") # why this double threshold?
+	Prefs.blackBackground = True
+	IJ.setAutoThreshold(imp_temp, "Otsu dark")
+	IJ.run(imp_temp, "Convert to Mask", "")
+	IJ.run(imp_temp, "Watershed", "")
+	IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
+	unitType = checkPixel(imp_temp)
+	IJ.run(imp_temp,"Analyze Particles...", "size=1.0--Infinity circularity=0-1.00 display exclude summarize add")
+	return unitType
+
 def runMyosightSegment(border_channel, param_dict):
 	''' Handles segmentation via Myosight '''
 	border_imp = pickImage(border_channel)
