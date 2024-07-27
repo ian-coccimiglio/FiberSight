@@ -13,16 +13,18 @@
 ##@ Integer (label="Type IIx Threshold", style=spinner, min=0, max=65535, value=100) mhciix
 
 import os, sys, math
+from math import sqrt
 from collections import OrderedDict, Counter
 from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.measure import ResultsTable
 from datetime import datetime
 from ij.io import Opener
-from ij.plugin import ChannelSplitter
-from jy_tools import closeAll, saveFigure, list_files, match_files, make_directories, reload_modules
+from ij.plugin import ChannelSplitter, RoiEnlarger
+from jy_tools import closeAll, saveFigure, list_files, match_files, make_directories, reload_modules, checkPixel, test_Results,attrs
 from image_tools import renameChannels, generate_ft_results, detectMultiChannel, selectChannels, renameChannels, \
-remove_small_rois
+remove_small_rois, pickImage, calculateDist, findNdistances, findInNearestFibers, watershedParticles, \
+drawCatch, mergeChannels,getCentroidPositions
 
 reload_modules()
 
@@ -36,6 +38,7 @@ figure_dir = folder_paths[1]
 masks_dir = folder_paths[2]
 metadata_dir = folder_paths[3]
 ft_figure_dir = make_directories(figure_dir, "fiber_type")[0]
+cn_figure_dir = make_directories(figure_dir, "central_nuc")[0]
 ft_mask_dir = make_directories(masks_dir, "fiber_type")[0]
 
 # selectedThresholds = {"Type I": mhci, "Type IIa": mhciia, "Type IIx": mhciix}
@@ -49,6 +52,7 @@ sample_name = ".".join(my_image.getName().split(".")[0:-1])
 
 results_path = os.path.join(results_dir, sample_name + "_results.csv")
 ft_figure_path = os.path.join(ft_figure_dir, sample_name + "_FiberType")
+cn_figure_path = os.path.join(cn_figure_dir, sample_name + "_CentralNuc")
 ft_mask_path = os.path.join(ft_mask_dir, sample_name)
 
 rm_fiber = RoiManager()
@@ -83,11 +87,14 @@ else:
 	IJ.error("Image needs to be multichannel to perform muscle fiber-typing")
 	sys.exit(1)
 
+DAPI_channel = None
 for channel in channels:
 	channel_abbrev = channel.title.split("-")[0]
 	channel.title = channel_remap[channel_abbrev]
 	if channel_remap[channel_abbrev] is not None and channel_remap[channel_abbrev] != "DAPI":
 		channel.show()
+	if channel_remap[channel_abbrev] == "DAPI":
+		DAPI_channel = channel
 
 ft_channels = map(WM.getImage, WM.getIDList())
 
@@ -137,12 +144,78 @@ for channel in ft_channels:
 	if save_res:
 		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
 
-IJ.log("### Identifying fiber types ### ")
+IJ.log("### Identifying fiber types ###")
 identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False)
+IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
+imp_border=pickImage("Border")
+rm_fiber.runCommand(imp_border, "Measure")
+nFibers = rm_fiber.getCount()
+xFib, yFib = getCentroidPositions(rm_fiber)
+test_Results(xFib, yFib)
+
+if DAPI_channel is not None:
+	DAPI_channel.show()
+	mergeChannels([DAPI_channel, imp_border], "Central_Nuclei_Locations")
+	imp_C_nuc = pickImage("Central_Nuclei_Locations")
+	IJ.log("Made it")
+	dapi_title = 'DAPI'
+	print "\n### Detecting Nuclei Positions ###"
+	IJ.run("Clear Results")
+	rm_fiber.runCommand("Show None")
+	rm_fiber.close() # close the fiber_rois
+	RM_Nuclei = RoiManager()
+	rm_nuclei = RM_Nuclei.getRoiManager()
+	unitType = watershedParticles(dapi_title)
+	IJ.log(unitType)
+	xNuc, yNuc = getCentroidPositions(rm_nuclei)
+	test_Results(xNuc,yNuc)
+	print "\n### Calculating Nuclei in Fibers ###"
+	
+	scale_f = imp_border.getCalibration().pixelWidth
+	
+	num_Check = 8 # Turn into a parameter somewhere
+	draw = False
+	
+	print "Microscope image scale is: ", scale_f
+	
+	print "\n### Calculating centroid distances ###"
+	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
+		
+	print "\n### Calculating number of nuclei in each fiber ###"
+	countNuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)	
+	
+	print "\n### Eroding fiber edges to determine central nuclei ###"
+	IJ.showStatus("Eroding ROI edges")
+	imp_border.hide()
+	rm_nuclei.close()
+	
+	RM_central = RoiManager()
+	rm_central = RM_central.getRoiManager()
+	
+	# write a function to simply count according to the mindex
+	for i in range(0, rm_fiber.getCount()):
+		rm_fiber.rename(i, str(i+1)+'_x' + str(int(round(xFib[i]))) + '-' + 'y' + str(int(round(yFib[i]))))
+		roi = rm_fiber.getRoi(i)
+		percReduction = 0.2 # shrinks ROIs by 20% of their area, rough.
+		frac = (1-percReduction)
+		roi_area = roi.getStatistics().area
+		reduced_area = frac*roi_area
+		pix = sqrt(roi_area)-sqrt(reduced_area)
+		pixShrink = -round(pix) # Reduce the size of the ROIs by 20% of the pixel area.
+		
+		new_roi = RoiEnlarger.enlarge(roi, pixShrink)
+		rm_central.add(new_roi, -1) # Adds rois with the same labels as the rm_fiber
+	
+	print "\n### Counting central nuclei ###"
+	IJ.showStatus("Counting central nuclei")
+	countCentral = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, draw=True, imp=imp_C_nuc, xFib=xFib, yFib=yFib)
+	IJ.run(imp_C_nuc, "Enhance Contrast", "saturated=0.35")
 
 IJ.run("Set Measurements...", "area feret's display add redirect=None decimal=3");
 
 IJ.log("### Measuring results ###")
+pickImage("DAPI")
+IJ.run("Clear Results")
 rm_fiber.runCommand("Measure")
 rt = ResultsTable().getResultsTable()
 
@@ -156,23 +229,35 @@ if "Type IIa_%-Area" in area_frac.keys():
 if "Type I_%-Area" in area_frac.keys():
 	rt.setValues("I_%-Area", area_frac["Type I_%-Area"])
 	composite_list.append("c6=[Type I]")
+
+
+
+numRows = rt.size()
+peripheral_Nuclei = []
+for row in range(numRows):
+	peripheral_Nuclei.append(countNuclei[row+1]-countCentral[row+1])
+
 if "Border" in [ft_channel.title for ft_channel in ft_channels]:
 	composite_list.append("c3=[Border]")
 
-
 IJ.log("Number of results: {}".format(rt.getCounter()))
+
 for n in range(rt.getCounter()):
 	rt.setValue("Fiber Type", n, identified_fiber_type[n])
+	rt.setValue("Central Nuclei", n, countCentral[n+1])
+	rt.setValue("Peripheral Nuclei", n, peripheral_Nuclei[n])
+	rt.setValue("Total Nuclei", n, countNuclei[n+1])
 
-rt.show("Results")
 rt.deleteColumn("Feret")
 rt.deleteColumn("FeretX")
 rt.deleteColumn("FeretY")
 rt.deleteColumn("FeretAngle")
 rt.updateResults()
- 
+rt.show("Results")
+
 IJ.log("### Making composite image ###")
 composite_string = " ".join(composite_list)
+imp_border.show()
 IJ.run("Merge Channels...", composite_string+" create keep");
 composite = IJ.getImage()
 
@@ -188,7 +273,7 @@ if border_roi is not None:
 	#IJ.run(channel, "Clear Outside", "");
 	IJ.run(composite, "Add Selection...", "")
 
-## Diagnostics ##
+### Diagnostics ##
 IJ.log("### Counting Fiber Types ###")
 c = Counter(identified_fiber_type)
 total_Fibers = sum(c.values())
@@ -199,11 +284,12 @@ for fibertype in c.most_common(8):
 	fraction = round(float(fibertype[1])/float(total_Fibers)*100,2)
 	IJ.log("Type {} fibers: {} ({}%) of fibers".format(fibertype[0], fibertype[1], fraction))
 
-## Saving #
+### Saving #
 if save_res:
 	IJ.log("### Saving Results ###")
 	IJ.saveAs(composite, "Jpg", ft_figure_path)
 	IJ.saveAs("Results", results_path)
+	IJ.saveAs(imp_C_nuc, "Jpg", cn_figure_path)
 
 ## Cleaning Up #
 IJ.log("### Cleaning up ###")
