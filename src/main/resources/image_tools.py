@@ -1,6 +1,6 @@
 from ij import IJ, ImagePlus, Prefs, WindowManager as WM
 from ij.macro import Variable
-from ij.io import OpenDialog, FileInfo
+from ij.io import OpenDialog, FileInfo, Opener
 from ij.process import ImageProcessor
 from ij.measure import ResultsTable, Measurements
 from ij.plugin import RoiEnlarger, RGBStackMerge
@@ -601,7 +601,7 @@ def read_image(file_path):
 			raise IOError("The path provided does not exist: {}".format(file_path))
 		if not os.path.isfile(file_path):
 			raise ValueError("The path provided is not a file: {}".format(file_path))
-		return IJ.openImage(file_path)
+		return Opener().openUsingBioFormats(file_path)
 	except IOError as e:
 		print("An IOError occurred: ", e)
 		return None
