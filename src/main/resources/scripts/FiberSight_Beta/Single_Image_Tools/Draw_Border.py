@@ -27,20 +27,20 @@ make_directories(experiment_dir, [border_dir])
 IJ.run("Close All")
 closeAll()
 IJ.setTool("polygon")
-image_path = os.path.join(raw_dir, raw_file)
+# image_path = os.path.join(raw_dir, raw_file)
 border_path = os.path.join(border_dir, ".".join(raw_file.split(".")[0:-1])+"_border.roi")
 border_files = list_files(border_dir)
 border_name = os.path.basename(border_path)
 
 if border_name not in border_files:
 	IJ.log("Current Sample is: {}".format(raw_file))
-	rm, imp = editRoi(image_path, border_path)
+	rm, imp = editRoi(raw_path_str, border_path)
 	IJ.log("### Saving ROI to {} ###".format(border_path))
 	rm.save(border_path)
 elif border_name in border_files and edit:
 	IJ.log("Current Sample is: {}".format(raw_file))
 	IJ.log("Border for {} already drawn, edit border if desired".format(raw_file))
-	rm, imp = editRoi(image_path, border_path)
+	rm, imp = editRoi(raw_path_str, border_path)
 	IJ.log("### Saving ROI to {} ###".format(border_path))
 	rm.save(border_path)	
 else:

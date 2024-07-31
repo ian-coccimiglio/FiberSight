@@ -2,12 +2,16 @@
 #@ Boolean (label="Separate labels?", description="Helps with edge masking if borders are heavily in contact with one another", value=True) sep_label
 #@ Boolean (label="Use your GPU?", description="Enables precise and fast masking of labels", value=True) gpu
 from ij import IJ, Prefs, WindowManager as WM
-import os
+import os, sys
 from ij.gui import WaitForUserDialog
 from image_tools import runCellpose, pickImage
 from jy_tools import closeAll, reload_modules
 from ij.plugin.frame import RoiManager
 from remove_edge_labels import make_excluded_edges, separate_labels_on_gpu
+
+"""
+A script which converts ROIs into labels, allows for selection-based cropping, and does not cut them off.
+"""
 
 Prefs.blackBackground = False
 
@@ -33,8 +37,8 @@ if sep_label == True:
 		label_image_title = r2l_prefix+imp.title
 		label_image = pickImage(label_image_title)
 		separated_labels = separate_labels_on_gpu(label_image)
-		separated_labels.hide()
-		label_image.hide()
+		separated_labels.show()
+		label_image.show()
 		edgeless = make_excluded_edges(separated_labels, border_roi=curr_selection)
 	else:
 		IJ.log("CLIJ2 plugin not found!")
