@@ -45,5 +45,3 @@ elif border_file in border_files and edit:
 	rm.save(border_path)	
 else:
 	IJ.log("Border for {} already drawn, moving on".format(raw_filename))
-
-IJ.log("Done!")
