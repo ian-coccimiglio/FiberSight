@@ -8,7 +8,7 @@ from ij import IJ
 from ij.plugin.frame import RoiManager
 from image_tools import batch_open_images, pickImage
 from jy_tools import match_files, list_files, closeAll
-import os
+import os, sys
 from datetime import datetime
 from utilities import generate_required_directories
 
@@ -27,15 +27,17 @@ extension = set([im.split(".")[-1] for im in image_list])
 separate_rois = "True" if separate_rois == 1 else "False"
 gpu = "True" if gpu == 1 else "False"
 
-if len(extension) > 1:
-	IJ.error("Error: More than one file type in raw files")
-else: 
-	ext = '.'+''.join(extension)
+#if len(extension) > 1:
+#	IJ.error("Error: More than one file type in raw files, keep them all the same")
+#	sys.exit(1)
+#else: 
+#	ext = '.'+''.join(extension)
 
 for enum, (border_roi, fiber_rois) in enumerate(matched_files_BF):
 	IJ.run("Close All")
 	sample_name = border_roi.split("_border")[0]
-	im_path = os.path.join(raw_image_dir.getPath(), sample_name+ext)
+	_, image_name = match_files(border_roi, image_list, "_border")[0]
+	im_path = os.path.join(raw_image_dir.getPath(), image_name)
 	border_path = os.path.join(border_roi_dir.getPath(), border_roi)
 	fiber_path = os.path.join(fiber_roi_dir.getPath(), fiber_rois)
 

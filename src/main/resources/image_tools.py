@@ -601,7 +601,12 @@ def read_image(file_path):
 			raise IOError("The path provided does not exist: {}".format(file_path))
 		if not os.path.isfile(file_path):
 			raise ValueError("The path provided is not a file: {}".format(file_path))
-		return Opener().openUsingBioFormats(file_path)
+			
+		imp = Opener().openUsingBioFormats(file_path)
+		if imp != None:
+			return(imp)
+		else:
+			return Opener().openImage(file_path)
 	except IOError as e:
 		print("An IOError occurred: ", e)
 		return None
@@ -668,7 +673,7 @@ def editRoi(image_path, roi_path=None):
 	rm.runCommand(imp,"Remove Channel Info");
 #	imp.getCanvas().addKeyListener(CustomKeyListener(rm, imp))
 	
-	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw or Edit ROIs, hit 't' to add to manager")
+	roiWait = WaitForUserDialog("Draw/Edit an ROI", "Draw or Edit ROIs, hit 't' to add to manager, then hit OK")
 	roiWait.show()
 	if rm.getCount() == 0:
 		roi = imp.getRoi()
