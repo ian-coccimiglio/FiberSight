@@ -27,7 +27,7 @@ from java.awt.event import ActionListener
 from javax.swing import JToggleButton
 from java.io import File
 
-def batch_open_images(path, file_type=None, name_filter=None, recursive=False):
+def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
     '''Open all files in the given folder.
     :param path: The path from were to open the images. String and java.io.File are allowed.
     :param file_type: Only accept files with the given extension (default: None).
@@ -651,7 +651,7 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 #        pass
 
 
-def editRoi(image_path, roi_path):
+def editRoi(image_path, roi_path=None):
 	Prefs.showAllSliceOnly = False; # Prevents ROIs from being interpreted per-slice
 
 	imp = read_image(image_path)
@@ -659,7 +659,7 @@ def editRoi(image_path, roi_path):
 	RM = RoiManager()
 	rm = RM.getRoiManager()
 	
-	if os.path.isfile(roi_path):
+	if roi_path is not None:
 		rm.open(roi_path)
 		rm.runCommand("Show All with Labels")
 		rm.select(0)

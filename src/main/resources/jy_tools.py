@@ -14,27 +14,6 @@ def reload_modules():
 			print("Reloading module: " + mod)
 			del(sys.modules[mod])
 
-def make_directories(main_path, folder_names):
-	IJ.log("### Generating Folders ###")
-	if not isinstance(folder_names, list):
-		folder_names = [folder_names]
-	try:
-		folder_paths = []
-		if not os.path.exists(main_path):
-			raise IOError("This does not point to a directory, perhaps you need to choose a different folder from this one: {}".format(main_path))
-		for folder_name in folder_names:
-			folder_path = os.path.join(main_path, folder_name)
-			folder_paths.append(folder_path)
-			if not os.path.isdir(folder_path):
-				IJ.log("Making directory: {}".format(folder_path))
-				mode = int('755', 8) # octal representation
-				os.mkdir(folder_path, mode)
-			else:
-				IJ.log("Using existing folder: {}".format(folder_path))
-	except IOError as e:
-		sys.exit(e)
-	return(folder_paths)
-
 def list_files(folder):
 	'''Lists files in a folder, skipping dot files'''
 	return [f for f in os.listdir(folder) if not f.startswith('.') and not f.startswith("_")]
