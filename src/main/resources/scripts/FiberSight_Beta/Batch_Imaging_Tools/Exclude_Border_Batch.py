@@ -42,6 +42,8 @@ for enum, (border_roi, fiber_rois) in enumerate(matched_files_BF):
 	fiber_path = os.path.join(fiber_roi_dir.getPath(), fiber_rois)
 
 	if os.path.exists(im_path):
+		print("---")
+		print("border_roi is {}\nfiber_path {}".format(border_roi, fiber_rois))
 		IJ.log("### Running Border Exclusion on {} ###".format(border_roi))
 		IJ.run("Close All")
 		closeAll()
