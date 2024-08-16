@@ -35,11 +35,18 @@ def generate_required_directories(experiment_dir, process):
 		dir_list = make_directories(experiment_dir, "cellpose_rois")
 	
 	if process == "Exclude Border":
+		dir_names = ["border_excluded_rois", "figures", "metadata"]
+		border_excluded_dir, figure_dir, metadata_dir = make_directories(experiment_dir, dir_names)
 		inside_border_dir_name = "fibers_in_border"
-		border_excluded_dir, figure_dir, metadata_dir = make_directories(experiment_dir, ["border_excluded_rois", "figures", "metadata"])
 		inside_border_dir, = make_directories(figure_dir, inside_border_dir_name)
 		
 		dir_list = [border_excluded_dir, figure_dir, inside_border_dir, metadata_dir]
+	
+	if process == "Fiber Morphology"
+		dir_names = ["results", "figures", "metadata"]
+		border_excluded_dir, figure_dir, metadata_dir = make_directories(experiment_dir, dir_names)
+		morphology_dir = "morphology"
+		inside_border_dir, = make_directories(figure_dir, morphology_dir)
 	
 	if process == "Edit Fibers":
 		dir_list = make_directories(experiment_dir, "manual_rois")

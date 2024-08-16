@@ -1,16 +1,16 @@
 #@ String (value="Select an experimental batch directory", visibility=MESSAGE, required=false) doc
 #@ File (label="Select a folder of raw images", style="directory") raw_image_dir
-#@ File (label="Select a folder of rois", style="directory") roi_dir
+#@ File (label="Select a folder of matching fiber rois", style="directory") roi_dir
 #@ String (label = "Channel 1", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c1
 #@ String (label = "Channel 2", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c2
 #@ String (label = "Channel 3", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c3
 #@ String (label = "Channel 4", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c4
 #@ String (label = "Threshold Method", choices={"Mean", "Otsu", "Huang"}, style="radioButtonHorizontal", value="Mean") threshold_method
-#@ Integer (label="Font Size", style=slider, min=6, max=24, value=16) fontSize
+#@ Integer (label="Fiber Type Font Size", style=slider, min=6, max=24, value=16) fontSize
 #@ Boolean (label="Save Results?", value=True) save_res
-##@ Integer (label="MHCI", style=spinner, min=0, max=65535, value=1000) MHCI
-##@ Integer (label="MHCIIa", style=spinner, min=0, max=65535, value=1000) MHCIIa
-##@ Integer (label="MHCIIx", style=spinner, min=0, max=65535, value=1000) MHCIIx
+##@ Integer (label="Type I Threshold", style=spinner, min=0, max=65535, value=1000) mhci
+##@ Integer (label="Type IIa Threshold", style=spinner, min=0, max=65535, value=1000) mhciia
+##@ Integer (label="Type IIx Threshold", style=spinner, min=0, max=65535, value=1000) mhciix
 
 import os, math, sys
 from collections import OrderedDict, Counter

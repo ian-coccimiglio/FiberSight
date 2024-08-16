@@ -4,13 +4,13 @@
 from ij import IJ, WindowManager as WM
 from ij import Prefs
 from ij.plugin.frame import RoiManager
-import os
+import os, sys
 from jy_tools import closeAll, attrs, saveFigure
 from ij.gui import PolygonRoi, Roi
 from ij.plugin import ImageCalculator
 from ij.io import Opener
 from ij.plugin import RoiEnlarger, ChannelSplitter
-from image_tools import detectMultiChannel, pickImage
+from image_tools import detectMultiChannel, pickImage, read_image
 
 def shrink_rois(rm, base_image):
 	"""
@@ -42,8 +42,7 @@ def separate_labels_on_gpu(label_image):
 	erosionRadius=1.0
 	relabel_islands=False
 	clij2.erodeLabels(input_image, separated_label_image, erosionRadius, relabel_islands)
-	clij2.pull(separated_label_image).show()
-	separated_labels = IJ.getImage()
+	separated_labels= clij2.pull(separated_label_image) 
 	clij2.clear() # clean up
 	return(separated_labels)
 
@@ -58,10 +57,8 @@ def make_excluded_edges(label_image, border_roi=None, rm=None):
 	To avoid this behavior, separate the labels by at least one pixel from one another.
 	"""
 	masks=label_image.duplicate()
-	masks.title = "All_Masks"
-	IJ.setRawThreshold(masks, 1, int(masks.getProcessor().getMax()));
+	IJ.setRawThreshold(masks, 1, int(masks.getProcessor().getMax())); # this won't work if the words 'thresholded' or 'remaining' are running in a macro and in the image title, see Thresholder.java
 	IJ.run(masks, "Make Binary", "")
-	masks.show()
 
 	if border_roi is not None:
 		masks.setRoi(border_roi)
@@ -70,7 +67,6 @@ def make_excluded_edges(label_image, border_roi=None, rm=None):
 	else:
 		print("Only 1 ROI can be in the ROI manager")
 		return None
-
 	IJ.run(masks, "Analyze Particles...", "exclude show=Masks")
 	
 	edgeless_masks=IJ.getImage()
@@ -98,8 +94,9 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 #		file_info = op_fi.getTiffFileInfo(base_image_path_str)[0]
 #		imp_base = IJ.createImage("Empty_Frame", file_info.width, file_info.height, 1, 8)
 #	else:
+	print("-----")
 	IJ.log("### Opening raw image ###")
-	imp_raw = IJ.openImage(base_image_path_str)
+	imp_raw = read_image(base_image_path_str)
 	if detectMultiChannel(imp_raw):
 		IJ.log("Multiple channels detected; splitting image")
 		channels = ChannelSplitter.split(imp_raw)
@@ -114,7 +111,7 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 	border_roi = op_roi.openRoi(border_roi_path_str)
 
 	RM = RoiManager()
-	rm_fibers = RM.getRoiManager()
+	rm_fibers = RM.getRoiManager() 
 	rm_fibers.open(fiber_rois_path_str)
 	IJ.log("Number of ROIs Before Edge Removal: {}".format(rm_fibers.getCount()))
 	r2l_prefix="ROIs2Label_"
@@ -130,6 +127,7 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 			IJ.log("### Separating Labels by GPU Label Erosion ###")
 			separated_labels = separate_labels_on_gpu(label_image)
 			separated_labels.hide()
+			print(separated_labels)
 			label_image.hide()
 			IJ.log("### Running Excluded Edge ###")
 			edgeless = make_excluded_edges(separated_labels, border_roi=border_roi)

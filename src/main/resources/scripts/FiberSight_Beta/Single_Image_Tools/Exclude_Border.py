@@ -12,6 +12,9 @@ from image_tools import convertLabelsToROIs
 
 def main():
 	IJ.log("\n### Processing Image: {} ###".format(raw_image_path.getName()))
+	print(border_roi_path.getPath())
+	print(fiber_roi_path.getPath())
+	print(raw_image_path.getPath())
 	edgeless, imp_base = ROI_border_exclusion(border_roi_path.getPath(), fiber_roi_path.getPath(), raw_image_path.getPath(), separate_rois=separate_rois, GPU=gpu)
 	rm = convertLabelsToROIs(edgeless)
 	IJ.log("Number of ROIs After Edge Removal: {}".format(rm.getCount()))
