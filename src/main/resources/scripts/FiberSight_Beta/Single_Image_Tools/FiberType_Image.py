@@ -21,25 +21,18 @@ from ij.measure import ResultsTable
 from datetime import datetime
 from ij.io import Opener
 from ij.plugin import ChannelSplitter, RoiEnlarger
-from jy_tools import closeAll, saveFigure, list_files, match_files, make_directories, reload_modules, checkPixel, test_Results,attrs
+from jy_tools import closeAll, saveFigure, list_files, match_files, reload_modules, checkPixel, test_Results,attrs
 from image_tools import renameChannels, generate_ft_results, detectMultiChannel, selectChannels, renameChannels, \
 remove_small_rois, pickImage, calculateDist, findNdistances, findInNearestFibers, watershedParticles, \
 drawCatch, mergeChannels,getCentroidPositions
+from utilities import generate_required_directories
 
 reload_modules()
 
 image_dir = my_image.getParent()
 fiber_roi_dir = fiber_rois.getParent()
 experiment_dir = os.path.dirname(image_dir)
-generated_folder_list = ["results", "figures", "masks", "metadata"]
-folder_paths = make_directories(experiment_dir, generated_folder_list)
-results_dir  = folder_paths[0]
-figure_dir = folder_paths[1]
-masks_dir = folder_paths[2]
-metadata_dir = folder_paths[3]
-ft_figure_dir = make_directories(figure_dir, "fiber_type")[0]
-cn_figure_dir = make_directories(figure_dir, "central_nuc")[0]
-ft_mask_dir = make_directories(masks_dir, "fiber_type")[0]
+results_dir, figure_dir, masks_dir, metadata_dir, ft_figure_dir, cn_figure_dir, ft_mask_dir = generate_required_directories(experiment_dir, "FiberType")
 
 # selectedThresholds = {"Type I": mhci, "Type IIa": mhciia, "Type IIx": mhciix}
 

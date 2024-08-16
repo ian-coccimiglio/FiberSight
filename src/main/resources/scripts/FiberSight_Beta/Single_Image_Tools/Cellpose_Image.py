@@ -1,8 +1,7 @@
 #@ File(label='Select a raw image', description="<html>Image should ideally be in TIF format</html>", style='file') raw_path
 #@ Integer (label="Border Channel", description="<html>Unused if the image is single-channel or brightfield</html>", min=0, max=10, value=0) segChan
 #@ Integer (label="Object Diameter",  description="<html>Set 0 to use Cellpose auto-detection </html>", min=0, max=200, value=0) cellposeDiam
-#@ String (choices={"cyto3", "cyto2", "PSR", "WGA"}, description="The type of model to use", value="cyto3", style="radioButtonHorizontal") model
-#@ Boolean (label="Save ROIs?", value=True) save_rois
+#@ String (choices={"cyto3", "cyto2", "PSR", "WGA", "HE"}, description="The type of model to use", value="cyto3", style="radioButtonHorizontal") model
 
 """
 Runs Cellpose on a single image, and produces a set of ROIs. 
@@ -13,27 +12,27 @@ import time
 from ij import IJ
 from ij.plugin import ChannelSplitter
 from ij.plugin.frame import RoiManager
-from jy_tools import closeAll, list_files, make_directories, reload_modules
+from jy_tools import closeAll, list_files, reload_modules
 from image_tools import runCellpose, detectMultiChannel, \
 batch_open_images, split_string, convertLabelsToROIs
+
 
 def main():
 	raw_path_string = raw_path.getAbsolutePath()
 	IJ.log("Raw Path: {}".format(raw_path_string))
-	raw_dir = os.path.dirname(raw_path_string)
-	base_dir= os.path.dirname(raw_dir)
-	cellpose_roi_dir = make_directories(base_dir, "cellpose_rois")[0]
-	IJ.log("Cellpose Directory: {}".format(cellpose_roi_dir))
 	homedir=os.path.expanduser("~")
 	model_dir=os.path.join(homedir,".cellpose","models")
 	if str(model) == "cyto2":
 		model_name = "cyto2_cp3"
 	elif str(model) == "PSR":
-		model_name = os.path.join(model_dir, "CP_20240213_021702_lr005")
+		model_name = os.path.join(model_dir, "PSR_9")
 		IJ.log("Attention: PSR model will not be able to automatically estimate fiber diameter, use Cyto2/3 for diameter estimation")
 	elif str(model) == "WGA":
-		model_name = os.path.join(model_dir, "WGA_model_5")
+		model_name = os.path.join(model_dir, "WGA_21")
 		IJ.log("Attention: WGA model will not be able to automatically estimate fiber diameter, use Cyto2/3 for diameter estimation")
+	elif str(model) == "HE":
+		model_name = os.path.join(model_dir, "HE_30")
+		IJ.log("Attention: HE model will not be able to automatically estimate fiber diameter, use Cyto2/3 for diameter estimation")
 	else:
 		model_name = str(model)
 		
@@ -69,12 +68,7 @@ def main():
 	num_detections = rm_fiber.getCount()
 	IJ.log("Number of Detected Fibers: {}".format(num_detections))
 	
-	cellpose_roi_path = os.path.join(cellpose_roi_dir,str(imp_labels.title)+"_RoiSet.zip")
-	if save_rois:
-		IJ.log("### Saving ROIs ###")
-		rm_fiber.save(cellpose_roi_path)
-	
-if __name__ in ['__builtin__','__main__']:
+if __name__ == "__main__":
 	IJ.run("Close All")
 	reload_modules()
 	IJ.log("".join(["\nRunning Image: ", os.path.basename(str(raw_path))]))

@@ -5,22 +5,19 @@
 #@ Boolean (label="Use your GPU?", description="Enables precise and fast masking of labels", value=True) gpu
 
 from ij import IJ
-from image_tools import batch_open_images
-from jy_tools import match_files, list_files, make_directories
+from ij.plugin.frame import RoiManager
+from image_tools import batch_open_images, pickImage
+from jy_tools import match_files, list_files, closeAll
 import os
 from datetime import datetime
-border_roi_dir_name = str(border_roi_dir)
-fiber_roi_dir_name = str(fiber_roi_dir)
-raw_image_dir_name = str(raw_image_dir)
-metadata_dir = "metadata"
-experiment_dir = os.path.dirname(raw_image_dir_name)
+from utilities import generate_required_directories
 
-fiber_roi_list = list_files(fiber_roi_dir_name)
-image_list = list_files(raw_image_dir_name)
-border_roi_list = list_files(border_roi_dir_name)
+fiber_roi_list = list_files(fiber_roi_dir.getPath())
+image_list = [os.path.basename(f) for f in batch_open_images(raw_image_dir.getPath())]
+border_roi_list = list_files(border_roi_dir.getPath())
+experiment_dir = raw_image_dir.getParent()
 
-make_directories(experiment_dir, metadata_dir)
-metadata_dir = os.path.join(experiment_dir, metadata_dir)
+border_excluded_dir, figure_dir, inside_border_dir, metadata_dir = generate_required_directories(experiment_dir, "Exclude Border")
 metadata_path = os.path.join(metadata_dir, "Log_Border_Removal-{}".format(datetime.today().strftime('%Y-%m-%d'))+".txt")
 matched_files_BI = match_files(border_roi_list, image_list)
 matched_files_BF = match_files(border_roi_list, fiber_roi_list, "_border")
@@ -38,13 +35,29 @@ else:
 for enum, (border_roi, fiber_rois) in enumerate(matched_files_BF):
 	IJ.run("Close All")
 	sample_name = border_roi.split("_border")[0]
-	im_path = os.path.join(raw_image_dir_name, sample_name+ext)
-	border_path = os.path.join(border_roi_dir_name, border_roi)
-	fiber_path = os.path.join(fiber_roi_dir_name, fiber_rois)
+	im_path = os.path.join(raw_image_dir.getPath(), sample_name+ext)
+	border_path = os.path.join(border_roi_dir.getPath(), border_roi)
+	fiber_path = os.path.join(fiber_roi_dir.getPath(), fiber_rois)
 
 	if os.path.exists(im_path):
 		IJ.log("### Running Border Exclusion on {} ###".format(border_roi))
-		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".format(border_path, fiber_path, im_path, separate_rois, gpu))
+		IJ.run("Close All")
+		closeAll()
+		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".\
+		format(border_path, fiber_path, im_path, separate_rois, gpu))
+		
+		RM = RoiManager()
+		rm = RM.getRoiManager()
+		file_name = os.path.basename(im_path)
+		sample_name = ".".join(file_name.split(".")[0:-1])
+		roi_save_path = os.path.join(border_excluded_dir, sample_name+"_RoiSet.zip")
+		rm.save(roi_save_path)
 
+		edgeless = pickImage("Labels_Excluded_Edge")
+		IJ.saveAs(edgeless, ".png", os.path.join(inside_border_dir, sample_name))
+		
+		rm.close()
+		edgeless.close()
+		
 # Saving Log
 IJ.saveString(IJ.getLog(), metadata_path)
