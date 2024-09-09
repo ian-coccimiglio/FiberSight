@@ -14,7 +14,7 @@ from ij.plugin import ChannelSplitter
 from ij.plugin.frame import RoiManager
 from jy_tools import closeAll, list_files, reload_modules
 from image_tools import runCellpose, detectMultiChannel, \
-batch_open_images, split_string, convertLabelsToROIs
+batch_open_images, split_string, convertLabelsToROIs, read_image
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
 	else:
 		IJ.log("Model {} NOT found".format(model))
 	
-	original_imp = IJ.openImage(raw_path_string)
+	original_imp = read_image(raw_path_string)
 	original_imp.show()
 	
 	if detectMultiChannel(original_imp):

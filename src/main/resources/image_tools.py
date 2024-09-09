@@ -29,7 +29,7 @@ from java.io import File
 
 def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
     '''Open all files in the given folder.
-    :param path: The path from were to open the images. String and java.io.File are allowed.
+    :param path: The path from where to open the images. String and java.io.File are allowed.
     :param file_type: Only accept files with the given extension (default: None).
     :param name_filter: Only accept files that contain the given string (default: None).
     :param recursive: Process directories recursively (default: False).
@@ -125,7 +125,46 @@ def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None
                         path_to_images.append(full_path)
 
     return path_to_images
- 
+
+def make_results(results_dict, Morph=False, FT=False, CN=False):
+	""" Takes an Dictionary, and adds to ResultsTable in that order """
+	IJ.run("Clear Results")
+	rt = ResultsTable.getResultsTable()
+	label_column = rt.getFreeColumn("Label")
+
+	for enum, label in enumerate(results_dict["Label"]):
+		rt.setValue(label_column, enum, label)
+		
+	if Morph:
+		IJ.log("Recording Morphologies")
+		rt.setValues("Area", results_dict["Area"])
+		rt.setValues("MinFeret", results_dict["MinFeret"])
+	
+	if FT:
+		IJ.log("Recording Fiber Types")
+		if results_dict.get("Type I_%-Area") is not None:
+			rt.setValues("Type I_%-Area", results_dict["Type I_%-Area"])
+
+		if results_dict.get("Type IIa_%-Area") is not None:
+			rt.setValues("Type IIa_%-Area", results_dict["Type IIa_%-Area"])
+
+		if results_dict.get("Type IIx_%-Area") is not None:
+			rt.setValues("Type IIx_%-Area", results_dict["Type IIx_%-Area"])
+
+		for enum, ft_label in enumerate(results_dict["Fiber_Type"]):
+			ft_column = rt.getFreeColumn("Label")
+			rt.setValue("Fiber_Type", enum, ft_label)
+	
+	if CN:
+		IJ.log("Recording Nucleation")
+		rt.setValues("Central Nuclei", results_dict["Central Nuclei"])
+		rt.setValues("Peripheral Nuclei", results_dict["Peripheral Nuclei"])
+		rt.setValues("Total Nuclei", results_dict["Total Nuclei"])
+
+	rt.updateResults()
+	rt.show("Results")
+	return(rt)
+
 def split_string(input_string):
     '''Split a string to a list and strip it
     :param input_string: A string that contains semicolons as separators.
@@ -453,7 +492,9 @@ def getCentroidPositions(rm):
 	x = []
 	y = []
 	for roi in rm.getRoisAsArray():
-		X, Y = roi.getContourCentroid()
+		X = roi.getStatistics().xCentroid
+		Y = roi.getStatistics().yCentroid
+		# X, Y = roi.getContourCentroid()
 		x.append(X)
 		y.append(Y)
 	return (x, y)
@@ -514,14 +555,14 @@ def findInNearestFibers(nearestFibers, rm, xCenter, yCenter, draw=None, imp=None
 	`draw` is a boolean which determines if the result should be drawn on an image.'''
 	nTotal = rm.getCount()
 	countMarker = Counter()
-	countMarker.update({x:0 for x in range(1, rm.getCount()+1)})
+	countMarker.update({x:0 for x in range(0, rm.getCount())})
 	
 	# write a function to simply count according to the mindex
 	for loc, vals in nearestFibers.items():
 		for mindex in vals:
 			roi = rm.getRoi(mindex)
 			if roi.containsPoint(xCenter[loc], yCenter[loc]):
-				countMarker[mindex+1]+=1
+				countMarker[mindex]+=1
 				if draw is not None:
 					drawCatch(xCenter[loc], yCenter[loc], xFib[mindex], yFib[mindex], imp)
 				break
@@ -534,7 +575,6 @@ def watershedParticles(image_title):
 	imp = pickImage(image_title)
 	imp_temp = imp.duplicate()
 	imp_temp.title = "{} Temp".format(imp.title)
-	IJ.setAutoThreshold(imp_temp, "Otsu dark") # why this double threshold?
 	Prefs.blackBackground = True
 	IJ.setAutoThreshold(imp_temp, "Otsu dark")
 	IJ.run(imp_temp, "Convert to Mask", "")
@@ -617,8 +657,9 @@ def read_image(file_path):
 def remove_small_rois(rm, imp, minimum_area=1500):
 	'''Automatically removes ROIs that are too small'''
 	
-	IJ.log("### Cleaning ROIs that are too small ###")
+	IJ.log("### Removing small ROIs with area below {} ###".format(minimum_area))
 	
+	IJ.run("Set Measurements...", "area add redirect=None decimal=3");
 	rm.runCommand(imp, "Measure")
 	rm.runCommand(imp, "Show None")
 	n_before = rm.getCount()
@@ -634,7 +675,7 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 	rm_filtered = RM.getRoiManager()
 	for roi in large_rois:
 		rm_filtered.addRoi(roi)
-	rm_filtered.runCommand(imp, "Show All with Labels")
+#	rm_filtered.runCommand(imp, "Show All with Labels")
 	n_after = rm_filtered.getCount()
 	IJ.log("Removed {} ROIs".format(n_before-n_after))
 	IJ.run("Clear Results", "")
