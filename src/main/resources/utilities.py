@@ -1,4 +1,5 @@
 from ij import IJ
+from ij.io import Opener
 import os, sys
 
 def make_directories(main_path, folder_names):
@@ -29,6 +30,18 @@ def is_experiment_dir(main_dir, raw_image_dir):
 		return(True)
 	return(False)
 
+def get_drawn_border_roi(border_dir, sample_name):
+    if not os.path.exists(border_dir):
+        return None
+
+    for drawn_border in os.listdir(border_dir):
+        if sample_name in drawn_border:
+            IJ.log("### Getting ROI border for visualization ###")
+            border_path = os.path.join(border_dir, drawn_border)
+            return Opener().openRoi(border_path)
+
+    return None
+
 def generate_required_directories(experiment_dir, process):
 	dir_list = []
 	if process == "Cellpose":
@@ -42,7 +55,7 @@ def generate_required_directories(experiment_dir, process):
 		
 		dir_list = [border_excluded_dir, figure_dir, inside_border_dir, metadata_dir]
 	
-	if process == "Fiber Morphology"
+	if process == "Fiber Morphology":
 		dir_names = ["results", "figures", "metadata"]
 		border_excluded_dir, figure_dir, metadata_dir = make_directories(experiment_dir, dir_names)
 		morphology_dir = "morphology"

@@ -53,16 +53,22 @@ def impPrint(imp, extras = None):
 
 def attrs(obj):
 	'''Function to print all functions/methods and attributes of the selected object'''
-	p = []
+	methods = []
+	attributes = []
 	for attr in dir(obj):
 		try:
 			if callable(getattr(obj, attr)):
-				print (attr + '()')
+				methods.append(attr + '()')
 			else: 
-				p.append((attr, getattr(obj,attr)))
+				attributes.append((attr, getattr(obj,attr)))
 		except:
 			pass
-	linPrint(p)
+	print("")
+	print("### Methods ###")
+	linPrint(methods)
+	print("")
+	print("### Attributes ###")
+	linPrint(attributes)
 
 def listProperties():
 	'''Lists out important java properties'''
@@ -76,6 +82,7 @@ def checkPixel(imp):
 	unitType = imp.getCalibration().getUnit()
 	print 'Image is calibrated:', hasCalibration
 	print 'Image is type:', unitType
+	return(unitType)
 
 def windowFind(p=False):
 	'''Lists all non-image windows'''
@@ -150,15 +157,15 @@ def match_files(files_a, files_b, split_string="_"):
 	return matched_files
 
 # Tests
-def test_Results(x, y):
+def test_Results(x, y, scale_f):
 	print "\n[Results Differences Test]"
 	res = resTable()
 	X_res = res.getColumn('X')
 	Y_res = res.getColumn('Y')
 	
 	if len(x) == len(X_res):
-		xdiff = [round(b,4)-round(a,4) for a, b in zip(x, X_res)]
-		ydiff = [round(b,4)-round(a,4) for a, b in zip(y, Y_res)]
+		xdiff = [round(b/scale_f,5)-round(a,5) for a, b in zip(x, X_res)]
+		ydiff = [round(b/scale_f,5)-round(a,5) for a, b in zip(y, Y_res)]
 		x_error = sum(xdiff)
 		y_error = sum(ydiff)
 		print "X error =", str(x_error), " Y error =", str(y_error)
@@ -172,6 +179,7 @@ def test_Results(x, y):
 	else:
 		print 'Result lengths are different', len(X_res), len(x)
 		print 'FAIL'
+	IJ.run("Clear Results")
 
 def main():
 	impPath = os.path.expanduser('~/SynologyDrive/Myosight/data/FR159_Fresh_Borders.tif')
