@@ -258,13 +258,15 @@ def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProba
 	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
 	print "Running Cellpose Segmentation algorithm"
 	
-	cellpose_str = cellposeModel=str(cellposeModel)+ \
+	cellpose_str = model=str(cellposeModel)+ \
+	" conda_env_path=/home/ian/miniconda3/envs/cellpose"+ \
+	" env_type=conda"+ \
 	" diameter="+str(cellposeDiameter)+ \
 	" cellproba_threshold="+str(cellposeProbability)+ \
 	" flow_threshold="+str(cellposeFlowThreshold)+ \
 	" model="+cellposeModel+ \
-	" nuclei_channel="+str(nucChannel)+ \
-	" cyto_channel="+str(cytoChannel)+ \
+	" ch1="+str(nucChannel)+ \
+	" ch2="+str(cytoChannel)+ \
 	" dimensionmode=2D"+ \
 	" anisotropy="+str(anisotropy)+ \
 	" diam_threshold="+str(diam_threshold) + \
@@ -272,10 +274,10 @@ def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProba
 	" omni=False"+ \
 	" cluster=False"+ \
 	" additional_flags=''"
-
+	
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
-			IJ.run(image, "Cellpose Advanced", cellpose_str)
+			IJ.run(image, "Cellpose ...", cellpose_str)
 		except:
 			pass
 	else:
@@ -721,8 +723,9 @@ def editRoi(image_path, roi_path=None):
 		rm.addRoi(roi)
 	return rm, imp
 
-def roiRecolor(roi):
-	roi.setStrokeColor(Color.red)
+def roiRecolor(roi, color =Color.red):
+	roi.setStrokeColor(color)
+	roi.setFillColor(color)
 	roi.setStrokeWidth(2)
 	
 def calculateDist(xNuc, yNuc, xFib, yFib, nFibers):
