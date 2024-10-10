@@ -1,15 +1,12 @@
-# A runner for the different analyses
-# CSA+Feret:			Cellpose -> Roi-Adjustment -> 							 -> Measurements
-# Central-Nucleation:	Cellpose -> Roi-Adjustment -> Stardist/Watershed		 -> Measurements
-# Fiber-Type:			Cellpose -> Roi-Adjustment -> Threshold setting (maybe?) -> Measurements
-# Fibrosis:				Border	 -> Threshold setting (maybe?)					 -> Measurements
-
 from ij import IJ
 from ij.gui import GenericDialog
+from ij.measure import ResultsTable
+from ij.plugin.frame import RoiManager
 from FiberSight import FiberSight
 from jy_tools import attrs, reload_modules
-from image_tools import read_image
+from image_tools import read_image, detectMultiChannel
 import os, sys
+import java.lang.System
 reload_modules()
 
 # Choose a particular analysis? 
@@ -18,77 +15,45 @@ reload_modules()
 # Or instructional?
 # Manual steps are prevalent.
 
-# Ok, so maybe the software /walks through/ each analysis on a single image.
-# So there are two/four things on the menu.
-# "FiberSight" -> Initializes to the one of the four main full-analyses. Each one is sequential and walks through a single image.
-# "FiberSight Batch" -> Initializes to one of the main tasks, dependent on what folders are filled.
-## There should be scripts that are the independent modules which run in both FiberSight and FiberSight Batch
+def get_operating_system():
+	ver = java.lang.System.getProperty("os.name")
+	return ver
 
-## Trained models should go in a folder, such as the Cellpose folder.
-# Why am I getting so tripped over the GUI. Build something crappy, improve it later.
-
-# OK, from the main terminal...
-# Run either fibersight or fibersight batch
-# Subfolder of utilities
-# A run of fibertyping would...
-## First, run Cellpose on an image. Save both cellpose_rois and cellpose_labels.
-## Second, draw borders.
-## Third, draw
+def run_test(image_path):
+	fs = FiberSight(input_image_path=image_path) # Opens FiberSight
+	im_path = fs.get_image_path()
+	roi_path = fs.get_roi_path()
+	return im_path, roi_path
 
 if __name__ in ['__builtin__','__main__']:
-#	fs.set_image_path()
-#	fs.set_roi_path()
-
-	# If user wants to run everything their image has at one time.
-	
-	# Open an image and/or an associated ROI
-	
+	# If user wants to run everything their image has at one time.	
 	# Case 1: It's a PNG (or single-channel)
-	# Assume it's fiber
 	home_path = os.path.expanduser("~")
-	blobs_image_path = os.path.join(home_path, "test_Experiments/Experiment_1_Blob_Tif/raw/blobs.tif")
+	if get_operating_system() == "Linux":
+		blobs_image_path = os.path.join(home_path, "test_Experiments/Experiment_1_Blob_Tif/raw/blobs.tif")
+	elif get_operating_system() == "Mac OS X":
+		blobs_image_path = os.path.join(home_path, "test_experiments/blobs/blobs.tif")
 	
+	im_path, roi_path = run_test(blobs_image_path)
+	image_dir = os.path.dirname(im_path)
+	results_dir = image_dir
+	
+	imp = read_image(im_path)
+	multichannel = detectMultiChannel(imp)
+	if roi_path == '':
+		rm_fiber = RoiManager().getRoiManager()
+		rm_fiber.show()
+		cellpose_str = "raw_path={} segchan=0".format(im_path)
+		IJ.run(imp, "Cellpose Image", cellpose_str)
+	else:
+		rm_fiber = RoiManager().getRoiManager()
+		rm_fiber.open(roi_path)
 
-	def run_test(image_path):
-		fs = FiberSight(input_image_path=image_path) # Opens FiberSight
-
-	run_test(blobs_image_path)
-	# Take measurements
-	# Case 2:	
-	# image_read(imp_path)
-	
-#	gd = GenericDialog("Analysis")
-#	buttons = ["Fibrosis Quantification", "CSA/Feret Analysis", "Central Nucleation Analysis", "Fiber-Type Quantification"]
-#	gd.addRadioButtonGroup("Name", buttons, 2, 2, "CSA/Feret")
-#	gd.setOKLabel("Run Analysis!")
-#	gd.showDialog()
-#	button = gd.getNextRadioButton()
-	
-	# If they select whichever one, do that analysis
-	
-#	if button == "Fibrosis Quantification":
-#		# Works on WGA Fluorescence/PSR Brightfield
-#		# print button
-#		IJ.run("Adjust ROIs", "mychoice=Drawing")
-#	#	IJ.run(
-#		
-#	#	IJ.run("") # Run the WGA analysis script
-#	#	IJ.run("Draw ROIs", "" )
-#	elif button == "CSA/Feret Analysis":
-#		print button
-#		
-#	#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
-#	#	IJ.run("Cellpose Advanced", "") # Run cellpose, initalize manual editing
-#
-#		IJ.run("", "")
-#		IJ.run()
-#	#	IJ.run("Cellpose Autoprocessor", "") # Run cellpose, initalize manual editing
-#	elif button == "Central Nucleation Analysis":
-#		print button
-#	
-#	#	IJ.run("") # Run cellpose, perform central nucleation analysis
-#	elif button == "Fiber-Type Quantification":
-#		print button
-#		IJ.run("") # Run cellpose, perform fibertype analysis on one image
-#	else:
-#		print("Analysis not found")
+	if multichannel:
+		# Open a fiber-typing/central_nucleation script
+	else:
+		IJ.run("Set Measurements...", "area feret's display add redirect=None decimal=3");
+		rm_fiber.runCommand(imp, "Measure")
+		rt = ResultsTable().getResultsTable()
+		sample_name = os.path.splitext(os.path.basename(im_path))[0]
+		IJ.saveAs("Results", os.path.join(results_dir, "{}_results.csv".format(sample_name)))
