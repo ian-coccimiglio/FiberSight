@@ -7,7 +7,7 @@
 from ij import IJ
 from ij.gui import GenericDialog
 from FiberSight import FiberSight
-from jy_tools import attrs, reload_modules
+from jy_tools import attrs, reload_modules, closeAll
 from image_tools import read_image
 import os, sys
 reload_modules()
@@ -35,23 +35,44 @@ reload_modules()
 ## Second, draw borders.
 ## Third, draw
 
-if __name__ in ['__builtin__','__main__']:
-#	fs.set_image_path()
-#	fs.set_roi_path()
+def cellpose_available():
+	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
+		return True
+	else:
+		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
+		return None
 
+if __name__ in ['__builtin__','__main__']:
 	# If user wants to run everything their image has at one time.
 	
 	# Open an image and/or an associated ROI
 	
 	# Case 1: It's a PNG (or single-channel)
-	# Assume it's fiber
+	IJ.run("Close All")
+	closeAll()
 	home_path = os.path.expanduser("~")
-	blobs_image_path = os.path.join(home_path, "test_Experiments/Experiment_1_Blob_Tif/raw/blobs.tif")
-	
+	blobs_image_path = os.path.join(home_path, "data/test_Experiments/Experiment_1_Blob_Tif/raw/blobs.tif")
+
 
 	def run_test(image_path):
+		SEGMENT_FIBERS = True
+		GET_MORPHOLOGY = True
+		CENTRAL_NUCELATION = False
+		FIBER_TYPE = False
 		fs = FiberSight(input_image_path=image_path) # Opens FiberSight
-
+		imp_path = fs.get_image_path()
+		if fs.get_roi_path() != "":
+			SEGMENT_FIBERS = False
+		imp = read_image(fs.get_image_path())
+		
+		if SEGMENT_FIBERS:
+			if cellpose_available():
+				image_string = "raw_path={}".format(imp_path)
+				IJ.run("Cellpose Image", image_string)
+				# IJ.run(imp, "Cellpose Image", "")
+			else:
+				pass
+				
 	run_test(blobs_image_path)
 	# Take measurements
 	# Case 2:	
