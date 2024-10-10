@@ -254,27 +254,12 @@ def convertLabelsToROIs(imp_labels):
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 		return None
 
-def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
-	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
-	print "Running Cellpose Segmentation algorithm"
+def runCellpose(image, model_type="cyto3", model_path = "", env_type = "conda", diameter=30, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0):
+	homedir = os.path.expanduser("~")
+	env_path = os.path.join(homedir, "miniconda3", "envs", "cellpose")
+	additional_flags = "[--use_gpu, --cellprob_threshold, {}, --flow_threshold, {}]".format(cellprob_threshold, flow_threshold)
 	
-	cellpose_str = model=str(cellposeModel)+ \
-	" conda_env_path=/home/ian/miniconda3/envs/cellpose"+ \
-	" env_type=conda"+ \
-	" diameter="+str(cellposeDiameter)+ \
-	" cellproba_threshold="+str(cellposeProbability)+ \
-	" flow_threshold="+str(cellposeFlowThreshold)+ \
-	" model="+cellposeModel+ \
-	" ch1="+str(nucChannel)+ \
-	" ch2="+str(cytoChannel)+ \
-	" dimensionmode=2D"+ \
-	" anisotropy="+str(anisotropy)+ \
-	" diam_threshold="+str(diam_threshold) + \
-	" stitch_threshold=-1"+ \
-	" omni=False"+ \
-	" cluster=False"+ \
-	" additional_flags=''"
-	
+	cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model_type, model_path, diameter, ch1, ch2, additional_flags)
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
 			IJ.run(image, "Cellpose ...", cellpose_str)
@@ -284,6 +269,30 @@ def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProba
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 	
 	return cellpose_str
+
+#def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
+#	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
+#	print "Running Cellpose Segmentation algorithm"
+#	
+#	cellpose_str = model=str(cellposeModel)+ \
+#	" conda_env_path=/home/ian/miniconda3/envs/cellpose"+ \
+#	" env_type=conda"+ \
+#	" diameter="+str(cellposeDiameter)+ \
+#	" cellproba_threshold="+str(cellposeProbability)+ \
+#	" flow_threshold="+str(cellposeFlowThreshold)+ \
+#	" model="+cellposeModel+ \
+#	" ch1="+str(nucChannel)+ \
+#	" ch2="+str(cytoChannel)+ \
+#	" dimensionmode=2D"+ \
+#	" anisotropy="+str(anisotropy)+ \
+#	" diam_threshold="+str(diam_threshold) + \
+#	" stitch_threshold=-1"+ \
+#	" omni=False"+ \
+#	" cluster=False"+ \
+#	" additional_flags=''"
+#	
+#
+#	return cellpose_str
 		
 		
 def pickImage(image):

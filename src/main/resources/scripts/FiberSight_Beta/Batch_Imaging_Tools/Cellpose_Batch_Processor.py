@@ -44,7 +44,7 @@ def main():
 		IJ.run("Close All")
 		closeAll()
 		save_rois=True
-		image_string = "raw_path="+image_path+" segchan="+str(segChan)+" cellposediam="+str(cellposeDiam)+" model="+str(model)+" save_rois="+str(save_rois)
+		image_string = "raw_path={} segchan={} cellposediam={} model={}".format(image_path, segChan, cellposeDiam, model)
 		IJ.log(image_string)
 		IJ.run("Cellpose Image", image_string)
 		label_title = IJ.getImage().title
