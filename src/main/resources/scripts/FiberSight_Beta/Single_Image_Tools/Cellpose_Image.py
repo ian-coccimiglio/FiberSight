@@ -16,7 +16,6 @@ from jy_tools import closeAll, list_files, reload_modules
 from image_tools import runCellpose, detectMultiChannel, \
 batch_open_images, split_string, convertLabelsToROIs, read_image
 
-
 def main():
 	raw_path_string = raw_path.getAbsolutePath()
 	IJ.log("Raw Path: {}".format(raw_path_string))
@@ -39,7 +38,8 @@ def main():
 	if model_name.split("/")[-1] in os.listdir(model_dir):
 		IJ.log("Model {} found".format(model))
 	else:
-		IJ.log("Model {} NOT found".format(model))
+		default_model = "cyto3"
+		IJ.log("Model {} NOT found, using default model {}".format(model, default_model))
 	
 	original_imp = read_image(raw_path_string)
 	original_imp.show()
@@ -56,7 +56,12 @@ def main():
 	IJ.log("### Running Cellpose on "+image_to_segment.title+" ###")
 	
 	start = time.time()
-	runCellpose(image_to_segment, cellposeModel=model_name, cellposeDiameter=cellposeDiam)
+	if model_name == "cyto3" or model_name=="cyto2":
+		runCellpose(image_to_segment, model_type="cyto3", model_path = "", env_type = "conda", diameter=cellposeDiam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
+	else:
+		runCellpose(image_to_segment, model_type="", model_path = model_name, env_type = "conda", diameter=cellposeDiam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
+
+	# runCellpose(image_to_segment, cellposeModel=model_name, cellposeDiameter=cellposeDiam)
 	finish = time.time()
 	time_in_seconds = finish-start
 	IJ.log("Time to run Cellpose = {:.2f} seconds".format(time_in_seconds))
