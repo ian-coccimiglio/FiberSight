@@ -43,6 +43,111 @@ if len(matched_files) == 0:
 		unedited_rois = True
 		IJ.log("Successfully matched {} pairs of images/ROIs".format(len(matched_files)))
 
+## file matching ##
+
+def match_roi_and_images(roi_dir: str, image_dir: str, 
+                        roi_pattern: str = r".*", 
+                        image_pattern: str = r".*") -> Dict[str, Tuple[Path, Path]]:
+    """
+    Match ROI files with their corresponding images based on shared sample IDs.
+    
+    Args:
+        roi_dir: Directory containing ROI files
+        image_dir: Directory containing image files
+        roi_pattern: Regex pattern to match ROI files (optional)
+        image_pattern: Regex pattern to match image files (optional)
+        
+    Returns:
+        Dictionary mapping sample IDs to tuples of (roi_path, image_path)
+        
+    Example:
+        Files:
+            ROIs/
+                Sample1_ROIs.zip
+                Sample2_ROIS.zip
+            Images/
+                Sample1 final staining.tif
+                Sample2_staining_v2.tif
+                
+        Usage:
+            matches = match_roi_and_images("ROIs", "Images")
+            
+            # With patterns
+            matches = match_roi_and_images(
+                "ROIs", 
+                "Images",
+                roi_pattern=r".*_ROIs\.zip$",
+                image_pattern=r".*\.tif$"
+            )
+    """
+    # Convert to Path objects
+    roi_path = Path(roi_dir)
+    image_path = Path(image_dir)
+    
+    # Get all files
+    roi_files = list(roi_path.glob("*"))
+    image_files = list(image_path.glob("*"))
+    
+    # Filter by patterns if provided
+    if roi_pattern:
+        roi_files = [f for f in roi_files if re.match(roi_pattern, f.name)]
+    if image_pattern:
+        image_files = [f for f in image_files if re.match(image_pattern, f.name)]
+    
+    # Extract potential sample IDs from filenames
+    def extract_sample_ids(filename: str) -> List[str]:
+        """
+        Extract all possible substrings that could be sample IDs.
+        Returns them sorted by length (longest first) to prefer more specific matches.
+        """
+        # Split by common delimiters
+        parts = re.split(r'[_\s\-\.]', filename)
+        # Generate all possible combinations of sequential parts
+        ids = []
+        for i in range(len(parts)):
+            for j in range(i + 1, len(parts) + 1):
+                sample_id = '_'.join(parts[i:j])
+                if sample_id:  # Avoid empty strings
+                    ids.append(sample_id)
+        return sorted(ids, key=len, reverse=True)
+    
+    # Build lookup of potential IDs to files
+    roi_lookup = {}
+    for roi_file in roi_files:
+        for sample_id in extract_sample_ids(roi_file.stem):
+            roi_lookup[sample_id] = roi_file
+            
+    image_lookup = {}
+    for image_file in image_files:
+        for sample_id in extract_sample_ids(image_file.stem):
+            image_lookup[sample_id] = image_file
+    
+    # Find matches
+    matches = {}
+    for sample_id in set(roi_lookup.keys()) & set(image_lookup.keys()):
+        matches[sample_id] = (roi_lookup[sample_id], image_lookup[sample_id])
+    
+    # Validate matches
+    if not matches:
+        print("Warning: No matches found!")
+        print("\nROI files found:")
+        for f in roi_files:
+            print(f"  {f.name}")
+        print("\nImage files found:")
+        for f in image_files:
+            print(f"  {f.name}")
+            
+    else:
+        print(f"Found {len(matches)} matches:")
+        for sample_id, (roi, img) in matches.items():
+            print(f"\nSample ID: {sample_id}")
+            print(f"  ROI:   {roi.name}")
+            print(f"  Image: {img.name}")
+    
+    return matches
+
+###################
+
 IJ.run("Close All")
 closeAll()
 IJ.run("Clear Results", "")
