@@ -26,6 +26,7 @@ from jy_tools import dirMake, saveFigure, pd, listProperties, resTable, userWait
 from java.awt.event import ActionListener
 from javax.swing import JToggleButton
 from java.io import File
+from CZIstackchoice import CZIopener
 
 def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
     '''Open all files in the given folder.
@@ -174,12 +175,30 @@ def split_string(input_string):
     strings_striped = [string.strip() for string in string_splitted]
     return strings_striped
 
-def loadMicroscopeImage(image_path):
-	''' Loads a microscope image '''
-	print "File Directory =", image_path
-	args = "open='{}' autoscale color_mode=Default display_rois rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT".format(image_path)
-	IJ.run("Bio-Formats Importer", args)
-	imp = IJ.getImage()
+#def loadMicroscopeImage(image_path):
+#	''' Loads a microscope image '''
+#	print "File Directory =", image_path
+#	args = "open='{}' autoscale color_mode=Default display_rois rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT".format(image_path)
+#	IJ.run("Bio-Formats Importer", args)
+#	imp = IJ.getImage()
+#	return imp
+	
+def loadMicroscopeImage(image_path, slicenum = 2):
+	''' Loads a microscope image from a path, and allows you to specify a specific slice '''
+	print "\n### Loading Images ###"
+	print "Image Directory =", image_path
+	
+	czi=CZIopener(image_path)
+	
+	if ((image_path.endswith('.czi')) and (len(czi.series_names) > 1)):
+		print('Image has multiple series, opening one')
+		czi.openSlice(slicenum)
+		image_magnification = czi.slice_mag
+		imp = IJ.getImage()
+	else:
+		args = "open='{}' autoscale color_mode=Default display_rois rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT".format(image_path)
+		IJ.run("Bio-Formats Importer", args)
+		imp = IJ.getImage()
 	return imp
 
 def ResegmentImage():
@@ -262,6 +281,8 @@ def runCellpose(image, model_type="cyto3", model_path = "", env_type = "conda", 
 	cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model_type, model_path, diameter, ch1, ch2, additional_flags)
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
+			if "diameter=0" in cellpose_str:
+				IJ.log("Cellpose with Estimated Diameter")
 			IJ.run(image, "Cellpose ...", cellpose_str)
 		except:
 			pass
@@ -343,7 +364,7 @@ def getMyosightParameters():
 	return paramDict
 
 
-def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
+def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False, prop_threshold = 50):
 	"""
 	Classifies the fiber type from a list of ['I', 'IIa', 'IIx'] and associated percentages
 	
@@ -397,7 +418,6 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
 	"""
 	fiber_props = {key:val for key, val in zip(fiber_type_keys,perc)}
 	t = []
-	prop_threshold = 50
 	for fiber, prop in fiber_props.items():
 		if fiber == "I":
 			if prop >= prop_threshold:
@@ -424,8 +444,14 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
 				ft = "IIa"
 		if(set(t) == set(["I", "IIx"])):
 			ft = "UND"
-		if(set(t) == set(["IIa", "IIx"])):
-			ft = "IIa/IIx"
+		if T2_hybrid:
+			if(set(t) == set(["IIa", "IIx"])):
+				ft = "IIa/IIx"
+		else:
+			if fiber_props["IIa"] >= fiber_props["IIx"]:
+				ft = "IIa"
+			else:
+				ft = "IIx"
 	elif len(t) == 3:
 		ft = "UND+"
 	else:
@@ -433,7 +459,7 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False):
 	
 	return(ft)
 
-def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False):
+def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False, prop_threshold = 50):
 	dom_list = []
 	result_dict = {}
 	zipped_data = zip(*multichannel_dict.values())
@@ -450,20 +476,20 @@ def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False):
 			zipped_data[enum] = row
 		lrow = list(row)
 		result_dict[enum] = list(zipped_data[enum])
-		dom_list.append(determine_fiber_type(fiber_type_keys, lrow, T1_hybrid=T1_hybrid))
+		dom_list.append(determine_fiber_type(fiber_type_keys, lrow, T1_hybrid=T1_hybrid, prop_threshold=prop_threshold))
 	return dom_list, result_dict
 
-def determine_dominant_fiber(dom_list, channel_keys, lrow):
+def determine_dominant_fiber(dom_list, channel_keys, lrow, positivity_threshold = 50):
 	ck_names = [ck.split('_%')[0].split("MHC")[1] for ck in channel_keys]
-	if lrow[0] >= 50: # Type 1
+	if lrow[0] >= positivity_threshold: # Type 1
 		dom_list.append(ck_names[0])
-	elif lrow[2] >= 50: 
-		if lrow[1] >= 50:
+	elif lrow[2] >= positivity_threshold: 
+		if lrow[1] >= positivity_threshold:
 			dom_list.append(ck_names[2]+"/"+ck_names[1]) # Type IIa/IIX
 		else:
 			dom_list.append(ck_names[2]) # Type IIa
-	elif lrow[2] < 50:
-		if lrow[1] >= 50:
+	elif lrow[2] < positivity_threshold:
+		if lrow[1] >= positivity_threshold:
 			dom_list.append(ck_names[1]) # Type IIx
 		else:
 			dom_list.append("UND") # Type UND

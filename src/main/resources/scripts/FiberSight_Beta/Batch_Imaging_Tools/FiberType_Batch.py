@@ -6,7 +6,7 @@
 #@ String (label = "Channel 3", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c3
 #@ String (label = "Channel 4", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c4
 #@ String (label = "Threshold Method", choices={"Mean", "Otsu", "Huang"}, style="radioButtonHorizontal", value="Mean") threshold_method
-#@ Integer (label="Fiber Type Font Size", style=slider, min=6, max=24, value=16) fontSize
+#@ Integer (label="Fiber Type Font Size", style=slider, min=6, max=32, value=16) fontSize
 #@ Boolean (label="Save Results?", value=True) save_res
 ##@ Integer (label="Type I Threshold", style=spinner, min=0, max=65535, value=1000) mhci
 ##@ Integer (label="Type IIa Threshold", style=spinner, min=0, max=65535, value=1000) mhciia
@@ -18,8 +18,9 @@ from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.measure import ResultsTable
 from datetime import datetime
-from jy_tools import closeAll, saveFigure, list_files, match_files, make_directories
+from jy_tools import closeAll, saveFigure, list_files, match_files
 from image_tools import renameChannels, generate_ft_results
+from utilities import make_directories
 
 IJ.log("\Clear")
 IJ.log("\n### Starting Muscle Fiber Typing Analysis ###")
@@ -32,7 +33,7 @@ if len(raw_files) != len(roi_files):
 	IJ.log("Warning: mismatched number of raw files to edited roi border files.")
 
 IJ.log("Parsing matching files")
-matched_files = match_files(raw_files, roi_files)
+matched_files = match_files(raw_files, roi_files, " ")
 if len(matched_files) == 0:
 	IJ.log("~~ No matching edited roi files found - checking if unedited Cellpose rois can be matched instead ~~")
 	if os.path.exists(cellpose_roi_dir):
@@ -46,13 +47,15 @@ IJ.run("Close All")
 closeAll()
 IJ.run("Clear Results", "")
 
+flat="False"
 save_res = "True" if save_res == 1 else "False"
 
 for enum, (raw_file, fiber_rois) in enumerate(matched_files):
 	raw_path = os.path.join(str(raw_image_dir), raw_file)
 	roi_path = os.path.join(str(roi_dir), fiber_rois)
-	input_string = "my_image={} fiber_rois={} fontsize={} c1='{}' c2='{}' c3='{}' c4='{}' threshold_method={} save_res={}".\
-	format(raw_path, roi_path, fontSize, str(c1), str(c2), str(c3), str(c4), threshold_method, save_res)
+	input_string = "my_image='{}' fiber_rois='{}' fontsize={} c1='{}' c2='{}' c3='{}' c4='{}' threshold_method='{}' save_res='{}' flat='{}'".\
+	format(raw_path, roi_path, fontSize, str(c1), str(c2), str(c3), str(c4), threshold_method, save_res, flat)
+	
 	IJ.log(input_string)
 	IJ.run("FiberType Image", input_string)
 
