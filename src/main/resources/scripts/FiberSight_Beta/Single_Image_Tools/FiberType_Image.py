@@ -6,7 +6,7 @@
 #@ String (label = "Channel 3", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c3
 #@ String (label = "Channel 4", choices={"Border", "Type I", "Type IIa", "Type IIx", "DAPI", "None"}, style="dropdown", value="None") c4
 #@ String (label = "Threshold Method", choices={"Mean", "Otsu", "Huang"}, style="radioButtonHorizontal", value="Mean") threshold_method
-#@ Integer (label="Fiber Type Font Size", style=slider, min=6, max=24, value=16) fontSize
+#@ Integer (label="Fiber Type Font Size", style=slider, min=6, max=32, value=16) fontSize
 #@ Boolean (label="Save Results?", value=True) save_res
 #@ Boolean (label="Flat-field correction?", value=True) flat
 ##@ Integer (label="Type I Threshold", style=spinner, min=0, max=65535, value=100) mhci
@@ -27,6 +27,7 @@ from image_tools import renameChannels, generate_ft_results, detectMultiChannel,
 remove_small_rois, pickImage, calculateDist, findNdistances, findInNearestFibers, watershedParticles, \
 drawCatch, mergeChannels,getCentroidPositions, make_results
 from utilities import generate_required_directories, get_drawn_border_roi
+from ij.plugin import HyperStackConverter
 
 ## Integrity checks ### 
 fiber_border_title = "Border"
@@ -63,14 +64,16 @@ IJ.log("\n### Running Sample: {} ###".format(sample_name))
 image_path = my_image.getAbsolutePath()
 IJ.log("### Opening Image {} ###".format(image_path))
 imp = IJ.openImage(image_path)
+imp = HyperStackConverter.toHyperStack(imp, 3,1,1)
+imp.removeScale()
 
-min_fiber_size = 500
+min_fiber_size = 10
 rm_fiber = remove_small_rois(rm_fiber, imp, min_fiber_size)
 
 channelMap = {"C1": c1, "C2": c2, "C3": c3, "C4": c4}
 channel_remap = {key:(value if value != "None" else None) for (key, value) in channelMap.items()}
 
-border_dir = os.path.join(experiment_dir, "roi_border")
+border_dir = os.path.join(experiment_dir, "border_roi")
 drawn_border_roi = get_drawn_border_roi(border_dir, sample_name)
 
 if detectMultiChannel(imp):
@@ -89,8 +92,10 @@ if detectMultiChannel(imp):
 	ft_channels = [channel for channel in open_channels if fiber_border_title not in channel.title]
 	FT = any(ft_channels)
 	Morph = any(fiber_border_title in channel.title for channel in open_channels)
-	CN = any("DAPI" in channel.title for channel in channels)
-	ft_sigma_blur=0
+	# CN = any("DAPI" in channel.title for channel in channels)
+	CN = "DAPI" in channelMap.values()
+
+	ft_sigma_blur=2
 	if flat == True:
 		ft_flat_blurring=100
 	else:
@@ -120,11 +125,14 @@ if FT:
 		IJ.run(channel, "Enhance Contrast", "saturated=0.35")
 		if channel.title == fiber_border_title:
 			continue
-		if ft_sigma_blur:
-			IJ.run(channel_dup, "Gaussian Blur...", "sigma={}".format(ft_sigma_blur))
 		if ft_flat_blurring:
-			IJ.run(channel_dup, "Pseudo flat field correction", "blurring={} hide".format(ft_flat_blurring))
-	
+			channel_dup.setRoi(drawn_border_roi)
+			IJ.run(channel_dup, "Clear Outside", "");
+			IJ.run(channel_dup, "Subtract Background...", "rolling=50")
+			IJ.run(channel_dup, "Gaussian Blur...", "sigma={}".format(ft_sigma_blur))
+			# IJ.run(channel_dup, "Pseudo flat field correction", "blurring={} hide".format(ft_flat_blurring))
+			
+
 		IJ.setAutoThreshold(channel_dup, threshold_method+" dark no-reset");
 		channel_dup.show()
 		Prefs.blackBackground = True
@@ -134,7 +142,7 @@ if FT:
 		fiber_type_ch = ResultsTable().getResultsTable()
 		Ch=channel.getTitle()
 		area_frac[Ch+"_%-Area"] = fiber_type_ch.getColumn("%Area")
-		fiber_area = fiber_type_ch.getColumn("%Area")
+		# fiber_area = fiber_type_ch.getColumn("%Area")
 		ch_list.append(Ch)
 	
 		IJ.run("Clear Results", "")
@@ -149,6 +157,8 @@ if FT:
 
 if Morph:
 	imp_border=pickImage(fiber_border_title)
+	scale_f=68814.912
+	IJ.run(imp_border, "Set Scale...", "distance={} known=1 unit=inch".format(scale_f));
 	IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
 	scale_f = imp_border.getCalibration().pixelWidth
 	rm_fiber.runCommand(imp_border, "Measure")
@@ -231,13 +241,12 @@ if Morph:
 
 if FT:
 	IJ.log("### Identifying fiber types ###")
-	identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False)
+	identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False, prop_threshold = 50)
 	results_dict["Fiber_Type"] = identified_fiber_type
 	for key in area_frac.keys():
 		results_dict[key] = area_frac.get(key, None)
 	for label in range(rm_fiber.getCount()):
 		rm_fiber.rename(label, identified_fiber_type[label])
-
 
 if CN:
 	count_peripheral = {}
@@ -271,13 +280,13 @@ rm_fiber.show()
 Prefs.useNamesAsLabels = True;
 rm_fiber.runCommand(composite, "Show All with Labels")
 IJ.run("From ROI Manager", "") 
-IJ.run(composite, "Labels...",  "color=yellow font="+str(fontSize)+" show use bold")
+IJ.run(composite, "Labels...",  "color=red font="+str(fontSize)+" show use bold")
 
 if drawn_border_roi is not None:
 	IJ.log("### Drawing outer border ###")
 	composite.setRoi(drawn_border_roi)
-	#IJ.run(channel, "Clear Outside", "");
-	IJ.run(composite, "Add Selection...", "")
+	#IJ.run(composite, "Clear Outside", "");
+	#IJ.run(composite, "Add Selection...", "")
 
 ### Diagnostics ##
 if FT:
@@ -331,7 +340,7 @@ IJ.log("Done {}!".format(str(my_image)))
 
 IJ.saveAs("Results", os.path.join(results_dir, sample_name+"_SigBlur_{}-Flat-field_{}-Thresh_{}.csv".format(ft_sigma_blur, ft_flat_blurring, threshold_method)))
 # manual labeling step below
-rm_fiber.save(os.path.join(experiment_dir, "final_rois", sample_name+"_RoiSet.zip"))
+# rm_fiber.save(os.path.join(experiment_dir, "final_rois", sample_name+"_RoiSet.zip"))
 #WM.getWindow("Log").close()
 #
 #print "Done!"

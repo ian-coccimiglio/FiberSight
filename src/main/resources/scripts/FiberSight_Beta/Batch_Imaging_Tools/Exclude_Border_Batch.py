@@ -47,7 +47,7 @@ for enum, (border_roi, fiber_rois) in enumerate(matched_files_BF):
 		IJ.log("### Running Border Exclusion on {} ###".format(border_roi))
 		IJ.run("Close All")
 		closeAll()
-		IJ.run("Exclude Border", "border_roi_path={} fiber_roi_path={} raw_image_path={} separate_rois={} gpu={}".\
+		IJ.run("Exclude Border", "border_roi_path='{}' fiber_roi_path='{}' raw_image_path='{}' separate_rois={} gpu={}".\
 		format(border_path, fiber_path, im_path, separate_rois, gpu))
 		
 		RM = RoiManager()

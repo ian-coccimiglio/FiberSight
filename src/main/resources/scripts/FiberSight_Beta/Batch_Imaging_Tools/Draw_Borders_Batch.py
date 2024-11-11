@@ -19,6 +19,6 @@ raw_files = batch_open_images(my_dir)
 for raw_file in raw_files:
 	IJ.run("Close All")
 	closeAll()
-	IJ.run("Draw Border", "raw_path={} border_dir={} edit={}".format(raw_file, border_dir, edit))
+	IJ.run("Draw Border", "raw_path='{}' border_dir={} edit={}".format(raw_file, border_dir, edit))
 	
 IJ.log("Done!")
