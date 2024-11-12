@@ -1,11 +1,33 @@
 #@ File (label = "Select folder of raw images", style="directory", persist=true) raw_dir
 #@ File (label = "Select folder of fiber rois for editing", style="directory", persist=true) fiber_dir
 
+""" Roi Batch Adjuster:
+
+This command cycles through two paired directories and enables manual pairwise-editing of ROIs.
+
+## How it works ## 
+experiment_directory
+|- raw/
+|-- raw1.tif
+|-- raw2.tif
+|- roi/
+|-- raw1_[suffix].roi
+|-- raw2_[suffix].zip
+
+The raw image name is fully preserved, and roi files are matched for everything after the final underscore.
+
+## Usage notes ##
+Raw files can use a variety of extensions/filetypes, but 'ome.tif', '.tiff', '.tif' and '.png' are tested.
+ROI files can have either as *.zip or *.roi extension to be parsed properly
+
+"""
+
 from ij import IJ
 import os, sys
 from jy_tools import closeAll, list_files, match_files
 from image_tools import editRoi
 from utilities import generate_required_directories
+from file_naming import FileNamer
 
 experiment_dir = raw_dir.getParent()
 manual_roi_dir, = generate_required_directories(experiment_dir, "Edit Fibers")

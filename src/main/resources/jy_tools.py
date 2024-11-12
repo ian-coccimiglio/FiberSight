@@ -1,11 +1,11 @@
 # These are best used as an import directly into your Fiji.app/jars/ so it will be exposed to the script-editor.
 # Last tested in the v1.54 Fiji script-editor.
 from ij.gui import GenericDialog, WaitForUserDialog
-from ij import IJ
+from ij import IJ, WindowManager as WM
 from ij.process import ImageStatistics as IS
 import sys, os
 from java.lang.System import getProperty, getProperties
-from ij import WindowManager as WM
+from file_naming import FileNamer
 
 def reload_modules():
 	userLib = [x for x in sys.path if x.endswith('/jars/Lib')][0] if (IJ.isLinux() or IJ.isMacintosh()) else [x for x in sys.path if x.endswith('\\jars\\Lib')][0]
@@ -132,22 +132,23 @@ def dirMake(inDir):
 	if not os.path.exists(inDir):
 		os.makedirs(inDir)
 
-def match_files(files_a, files_b, split_string="_"):
-	'''Matches files based on everything before the split string
+def match_files(file_list_A, file_list_B, split_string="."):
 	'''
+	Matches files based on everything before the split string
+	'''
+		
 	matched_files = []
-	if not type(files_a) == list:
-		files_a = [files_a]
-	if not type(files_b) == list:
-		files_b = [files_b]
-	for file_a in files_a:
-		a_noExt = file_a.split('.')[:-1]
-		sample_id_a = '.'.join(a_noExt).split(split_string)[0]
-		for file_b in files_b:
-			b_noExt = file_b.split('.')[:-1]
-			sample_id_b = '.'.join(b_noExt).split(split_string)[0]
-			if sample_id_a in sample_id_b:
-				print(file_a+ " matches "+file_b)
+	if not type(file_list_A) == list:
+		file_list_A = [file_list_A]
+	if not type(file_list_B) == list:
+		file_list_B = [file_list_B]
+	
+	for file_a in file_list_A:
+		a = FileNamer(file_a).remove_extension().split(split_string)[0]
+		for file_b in file_list_B:
+			b = FileNamer(file_b).remove_extension().split(split_string)[0]
+			if a in b:
+				# print("{}\nmatches\n{}".format(file_a, file_b))
 				matched_files.append((file_a, file_b))
 				break
 	if len(matched_files) == 0:
@@ -155,6 +156,31 @@ def match_files(files_a, files_b, split_string="_"):
 	else:
 		IJ.log("Successfully matched {} pairs of files".format(len(matched_files)))
 	return matched_files
+
+
+#def match_files(files_a, files_b, split_string="_"):
+#	'''Matches files based on everything before the split string
+#	'''
+#	matched_files = []
+#	if not type(files_a) == list:
+#		files_a = [files_a]
+#	if not type(files_b) == list:
+#		files_b = [files_b]
+#	for file_a in files_a:
+#		a_noExt = file_a.split('.')[:-1]
+#		sample_id_a = '.'.join(a_noExt).split(split_string)[0]
+#		for file_b in files_b:
+#			b_noExt = file_b.split('.')[:-1]
+#			sample_id_b = '.'.join(b_noExt).split(split_string)[0]
+#			if sample_id_a in sample_id_b:
+#				print(file_a+ " matches "+file_b)
+#				matched_files.append((file_a, file_b))
+#				break
+#	if len(matched_files) == 0:
+#		IJ.log("No matched files were found")
+#	else:
+#		IJ.log("Successfully matched {} pairs of files".format(len(matched_files)))
+#	return matched_files
 
 # Tests
 def test_Results(x, y, scale_f):
