@@ -1,10 +1,11 @@
+#@ File(label='Select a raw image', description="<html>Image should ideally be in TIF format</html>", style='file') raw_path
+
 from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.gui import WaitForUserDialog
 from image_tools import read_image
 from file_naming import FileNamer
 import os
-
 
 class ManualRoiEditor:
 	def __init__(self, analysis_type, image_path=None, roi_path=None):
@@ -40,7 +41,7 @@ class ManualRoiEditor:
 	
 	def edit_roi(self, save=True):
 		if os.path.exists(self.roi_path):
-			IJ.log("ROI drawn for {}, edit border if desired".format(self.imp.title))
+			IJ.log("ROI File already exists {}, edit ROI if desired".format(self.imp.title))
 			self.rm.open(self.roi_path)
 			self.rm.runCommand("Show All with Labels")
 			self.rm.select(0)
@@ -49,7 +50,7 @@ class ManualRoiEditor:
 	def save_rois(self):
 		if not os.path.exists(self.roi_path):
 			roi_dir_name = os.path.dirname(self.roi_path)
-			IJ.log("### Making directory to {} ###".format(roi_dir_name))
+			IJ.log("### Making directory: {} ###".format(roi_dir_name))
 			os.mkdir(roi_dir_name, int('755',8))
 		IJ.log("### Saving ROI to {} ###".format(self.roi_path))
 		self.rm.save(self.roi_path)
@@ -61,6 +62,6 @@ class ManualRoiEditor:
 if __name__ == "__main__":
 	from jy_tools import attrs, reload_modules, closeAll
 	reload_modules()
-	roi_editor = ManualRoiEditor("border_roi", image_path="/home/ian/Downloads/X33-1_D2_1_2024y01m31d_16h30m.tif")
-	roi_editor.edit_roi()
+	roi_editor = ManualRoiEditor("border_roi", image_path=raw_path.path)
+	roi_editor.edit_roi(save=False)
 
