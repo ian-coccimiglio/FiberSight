@@ -1,7 +1,5 @@
-from ij import IJ, Prefs
-from ij.plugin.frame import RoiManager
+#@ File(label='Select a raw image', description="<html>Image should ideally be in TIF format</html>", style='file') raw_path
 import os
-
 class FileNamer:
 	SUFFIXES = {
 		"fiber_rois": "_fibers_RoiSet.zip",
@@ -25,25 +23,26 @@ class FileNamer:
 	}
 	
 	def __init__(self, image_path):
-		self.file_name = os.path.basename(image_path)
-		self.dir_name = os.path.dirname(image_path)
+		self.image_name = os.path.basename(image_path)
+		self.image_dir = os.path.dirname(image_path)
+		self.experiment_dir = os.path.dirname(self.image_dir)
 		self.base_name = self.remove_extension()
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
 	
 	def get_directory(self, analysis_type):
-		return os.path.join(self.dir_name, self.DIRECTORIES[analysis_type])
+		return os.path.join(self.experiment_dir, self.DIRECTORIES[analysis_type])
 		
 	def remove_extension(self):
 		"""
 		Returns the basename of the file excluded extensions (compound or otherwise)
 		"""
-		filename_lower = self.file_name.lower()
+		filename_lower = self.image_name.lower()
 		for compound_ext in self.COMPOUND_EXTENSIONS:
 			if filename_lower.endswith(compound_ext):
-				return self.file_name[:-len(compound_ext)]
-		return os.path.splitext(self.file_name)[0]
+				return self.image_name[:-len(compound_ext)]
+		return os.path.splitext(self.image_name)[0]
 	
 	def get_analysis_specific_name(self, analysis_type):
 		"""
@@ -65,3 +64,9 @@ class FileNamer:
 		analysis_specific_filename = self.get_analysis_specific_name(analysis_type)
 		analysis_directory = self.get_directory(analysis_type)
 		return os.path.join(analysis_directory, analysis_specific_filename)
+		
+if __name__ == "__main__":
+	# Usage #
+	namer = FileNamer(raw_path.path)
+	print namer.get_directory("border_roi")
+	print namer.get_path("border_roi")
