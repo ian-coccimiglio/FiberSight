@@ -2,20 +2,21 @@ from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.gui import WaitForUserDialog
 from image_tools import read_image
-from jy_tools import attrs, reload_modules, closeAll
 from file_naming import FileNamer
 import os
 
-reload_modules()
 
 class ManualRoiEditor:
-	def __init__(self, analysis_type, image_path, roi_path=None):
+	def __init__(self, analysis_type, image_path=None, roi_path=None):
 		Prefs.showAllSliceOnly = False; # Prevents ROIs from being interpreted per-slice
 		IJ.setTool("polygon")
 		self.namer = FileNamer(image_path)
-		self.imp = read_image(image_path)
-		self.rm = RoiManager().getRoiManager()
+		if image_path is not None:
+			self.imp = read_image(image_path)
+		else:
+			self.imp = IJ.getImage()
 		self.image_path = image_path
+		self.rm = RoiManager().getRoiManager()
 		if roi_path is not None:
 			self.roi_path = roi_path
 		else:
@@ -39,7 +40,7 @@ class ManualRoiEditor:
 	
 	def edit_roi(self, save=True):
 		if os.path.exists(self.roi_path):
-			IJ.log("Border for {} already drawn, edit border if desired".format(self.imp.title))
+			IJ.log("ROI drawn for {}, edit border if desired".format(self.imp.title))
 			self.rm.open(self.roi_path)
 			self.rm.runCommand("Show All with Labels")
 			self.rm.select(0)
@@ -58,6 +59,8 @@ class ManualRoiEditor:
 		self.rm.close()
 
 if __name__ == "__main__":
+	from jy_tools import attrs, reload_modules, closeAll
+	reload_modules()
 	roi_editor = ManualRoiEditor("border_roi", image_path="/home/ian/Downloads/X33-1_D2_1_2024y01m31d_16h30m.tif")
 	roi_editor.edit_roi()
 
