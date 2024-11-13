@@ -31,6 +31,9 @@ class FileNamer:
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
+	
+	def get_directory(self, analysis_type):
+		return os.path.join(self.dir_name, self.DIRECTORIES[analysis_type])
 		
 	def remove_extension(self):
 		"""
@@ -60,4 +63,5 @@ class FileNamer:
 			raise ValueError("Unknown directory type: {}".format(analysis_type))
 		
 		analysis_specific_filename = self.get_analysis_specific_name(analysis_type)
-		return os.path.join(self.dir_name, self.DIRECTORIES[analysis_type], analysis_specific_filename)
+		analysis_directory = self.get_directory(analysis_type)
+		return os.path.join(analysis_directory, analysis_specific_filename)

@@ -3,6 +3,15 @@
 
 """ Roi Batch Adjuster:
 
+# Deprecate this?
+# Border ROI adjustment: There is only one border file for a given sample
+# Fiber ROI adjustment: Multiple fiber border directories could exist
+
+# In general, the idea of matching an image_name to its theoretical path would be useful.
+# I think all of this can be done in the FileNamer
+### ^ ^ ^ Do this tomorrow! ^ ^ ^ ### 
+
+
 This command cycles through two paired directories and enables manual pairwise-editing of ROIs.
 
 ## How it works ## 
