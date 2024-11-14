@@ -82,10 +82,28 @@ def make_excluded_edges(label_image, border_roi=None, rm=None):
 		rm.runCommand("Show All")
 	return(edgeless)
 	
-def open_files():
-	pass
+def open_exclusion_files(base_image_path_str, border_roi_path_str, fiber_rois_path_str, selected_channel=3):
+	print("-----")
+	IJ.log("### Opening raw image ###")
+	imp_raw = read_image(base_image_path_str)
+	if detectMultiChannel(imp_raw):
+		IJ.log("Multiple channels detected; splitting image")
+		channels = ChannelSplitter.split(imp_raw)
+		channels[selected_channel].show() # Selects the channel to segment, offset by 1 for indexing
+		imp_base = channels[selected_channel]
+	else:
+		imp_base = imp_raw
+	
+	op_roi = Opener()
+	border_roi = op_roi.openRoi(border_roi_path_str)
+	
+	RM = RoiManager()
+	rm_fibers = RM.getRoiManager() 
+	rm_fibers.open(fiber_rois_path_str)
+	
+	return imp_base, border_roi, rm_fibers
 
-def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_path_str, separate_rois=True, GPU=True, selected_channel=3):
+def ROI_border_exclusion(base_image, border_roi, fiber_rois, separate_rois=True, GPU=True):
 	"""
 	Exclude borders when starting from only ROIs, not label images.
 	
@@ -97,25 +115,7 @@ def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_pa
 #		file_info = op_fi.getTiffFileInfo(base_image_path_str)[0]
 #		imp_base = IJ.createImage("Empty_Frame", file_info.width, file_info.height, 1, 8)
 #	else:
-	print("-----")
-	IJ.log("### Opening raw image ###")
-	imp_raw = read_image(base_image_path_str)
-	if detectMultiChannel(imp_raw):
-		IJ.log("Multiple channels detected; splitting image")
-		channels = ChannelSplitter.split(imp_raw)
-		channels[selected_channel].show() # Selects the channel to segment, offset by 1 for indexing
-		imp_raw.hide()
-	else:
-		imp_raw.show()
-	imp_base = IJ.getImage()
-	imp_base.show()
 
-	op_roi = Opener()
-	border_roi = op_roi.openRoi(border_roi_path_str)
-
-	RM = RoiManager()
-	rm_fibers = RM.getRoiManager() 
-	rm_fibers.open(fiber_rois_path_str)
 	IJ.log("Number of ROIs Before Edge Removal: {}".format(rm_fibers.getCount()))
 	r2l_prefix="ROIs2Label_"
 	# IJ.log("Separate ROIs is: {}".format(separate_rois))
