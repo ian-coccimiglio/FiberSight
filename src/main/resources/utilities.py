@@ -30,15 +30,13 @@ def is_experiment_dir(main_dir, raw_image_dir):
 		return(True)
 	return(False)
 
-def get_drawn_border_roi(border_dir, sample_name):
-    if not os.path.exists(border_dir):
+def get_drawn_border_roi(border_path):
+    if not os.path.exists(border_path):
+    	IJ.log("No manual drawn border exists")
         return None
-
-    for drawn_border in os.listdir(border_dir):
-        if sample_name in drawn_border:
-            IJ.log("### Getting ROI border for visualization ###")
-            border_path = os.path.join(border_dir, drawn_border)
-            return Opener().openRoi(border_path)
+    else:
+        IJ.log("### Getting ROI border for visualization ###")
+        return Opener().openRoi(border_path)
 
     return None
 

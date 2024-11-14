@@ -82,6 +82,9 @@ def make_excluded_edges(label_image, border_roi=None, rm=None):
 		rm.runCommand("Show All")
 	return(edgeless)
 	
+def open_files():
+	pass
+
 def ROI_border_exclusion(border_roi_path_str, fiber_rois_path_str, base_image_path_str, separate_rois=True, GPU=True, selected_channel=3):
 	"""
 	Exclude borders when starting from only ROIs, not label images.
