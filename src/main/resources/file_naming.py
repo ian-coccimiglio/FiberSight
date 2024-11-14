@@ -64,9 +64,20 @@ class FileNamer:
 		analysis_specific_filename = self.get_analysis_specific_name(analysis_type)
 		analysis_directory = self.get_directory(analysis_type)
 		return os.path.join(analysis_directory, analysis_specific_filename)
+
+	def __str__(self):
+		"""
+		String representation of the file paths
+		"""
+		return ("Image Name: {}\n"
+				"Image Directory: {}\n"
+				"Experiment Directory: {}\n"
+				"Border Path: {}\n"
+				"Cellpose Fiber ROI Path: {}\n".format(self.image_name, self.image_dir, self.experiment_dir, self.border_path, self.fiber_roi_path))
 		
 if __name__ == "__main__":
 	# Usage #
 	namer = FileNamer(raw_path.path)
-	print namer.get_directory("border_roi")
-	print namer.get_path("border_roi")
+	#print namer.get_directory("border_roi")
+	#print namer.get_path("border_roi")
+	print(namer)
