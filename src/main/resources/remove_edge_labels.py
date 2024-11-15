@@ -103,7 +103,7 @@ def open_exclusion_files(base_image_path_str, border_roi_path_str, fiber_rois_pa
 	
 	return imp_base, border_roi, rm_fibers
 
-def ROI_border_exclusion(base_image, border_roi, fiber_rois, separate_rois=True, GPU=True):
+def ROI_border_exclusion(base_image, border_roi, rm_fibers, separate_rois=True, GPU=True):
 	"""
 	Exclude borders when starting from only ROIs, not label images.
 	
@@ -124,8 +124,9 @@ def ROI_border_exclusion(base_image, border_roi, fiber_rois, separate_rois=True,
 		if GPU and any([plugin.startswith("clij2_") for plugin in os.listdir(IJ.getDirectory("plugins"))]):
 			IJ.log("CLIJ2 plugin found!")
 			IJ.log("### Converting ROIs to Label image ###")
+			base_image.show()
 			IJ.run("ROIs to Label image", "")
-			label_image_title = r2l_prefix+imp_base.title
+			label_image_title = r2l_prefix+base_image.title
 			label_image = pickImage(label_image_title)
 			IJ.log("### Separating Labels by GPU Label Erosion ###")
 			separated_labels = separate_labels_on_gpu(label_image)
@@ -137,10 +138,10 @@ def ROI_border_exclusion(base_image, border_roi, fiber_rois, separate_rois=True,
 		else:
 			IJ.log("CLIJ2 plugin not found!")
 			IJ.log("### Separating Labels by ROI Erosion ###")
-			rm_small = shrink_rois(rm_fibers, imp_base)
+			rm_small = shrink_rois(rm_fibers, base_image)
 			IJ.log("### Converting ROIs to Label image ###")
 			IJ.run("ROIs to Label image", "")
-			separated_label_image_title = r2l_prefix+imp_base.title
+			separated_label_image_title = r2l_prefix+base_image.title
 			separated_label_image = pickImage(separated_label_image_title)
 			separated_label_image.hide()
 			IJ.log("### Running Excluded Edge ###")
@@ -153,24 +154,25 @@ def ROI_border_exclusion(base_image, border_roi, fiber_rois, separate_rois=True,
 		edgeless = make_excluded_edges(label_image, border_roi=border_roi)
 	
 	edgeless.setRoi(border_roi, True)
-	imp_base.setRoi(border_roi, True)
+	base_image.setRoi(border_roi, True)
 	
-	IJ.run(imp_base, "Add Image...", "image=Labels_Excluded_Edge x=0 y=0 opacity=50");
-	IJ.run(imp_base, "Add Selection...", "")
+	IJ.run(base_image, "Add Image...", "image=Labels_Excluded_Edge x=0 y=0 opacity=50");
+	IJ.run(base_image, "Add Selection...", "")
 	IJ.run(edgeless, "Add Selection...", "")
 	
 	IJ.log("Done!")
-	return edgeless, imp_base
+	return edgeless, base_image
 			
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
-	
+	imp_base, border_roi, rm_fibers = open_exclusion_files(base_image_path_str, border_roi_path_str, fiber_rois_path_str, selected_channel=3)
 	labels=IJ.openImage(str(label_image_path))
 	labels.title = "All_Labels"
 	
 	op = Opener()
 	border_roi = op.openRoi(str(border_roi_path))
+	
 	sep_labels = separate_labels_on_gpu(labels)
 	edgeless = make_excluded_edges(sep_labels, border_roi=border_roi)
 	edgeless.show()

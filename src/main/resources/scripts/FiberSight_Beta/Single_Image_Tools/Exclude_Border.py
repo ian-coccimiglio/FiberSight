@@ -7,7 +7,7 @@
 from ij import IJ
 import os
 from jy_tools import attrs, closeAll
-from remove_edge_labels import ROI_border_exclusion
+from remove_edge_labels import ROI_border_exclusion, open_exclusion_files
 from image_tools import convertLabelsToROIs
 
 def main():
@@ -15,8 +15,11 @@ def main():
 	print(border_roi_path.getPath())
 	print(fiber_roi_path.getPath())
 	print(raw_image_path.getPath())
-	edgeless, imp_base = ROI_border_exclusion(border_roi_path.getPath(), fiber_roi_path.getPath(), raw_image_path.getPath(), separate_rois=separate_rois, GPU=gpu)
+	
+	imp_base, border_roi, rm_fibers = open_exclusion_files(raw_image_path.getPath(), border_roi_path.getPath(), fiber_roi_path.getPath())
+	edgeless, base_image = ROI_border_exclusion(imp_base, border_roi, rm_fibers, separate_rois=separate_rois, GPU=gpu)
 	rm = convertLabelsToROIs(edgeless)
+	rm_fibers.show()
 	IJ.log("Number of ROIs After Edge Removal: {}".format(rm.getCount()))
 
 if __name__ == "__main__":
