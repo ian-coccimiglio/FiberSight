@@ -13,14 +13,17 @@ from ij.plugin import ChannelSplitter, RoiEnlarger
 from ij.plugin.frame import RoiManager
 from jy_tools import reload_modules
 from utilities import get_drawn_border_roi
-from image_tools import read_image, detectMultiChannel, pickImage, remove_small_rois
+from image_tools import read_image, detectMultiChannel, pickImage, remove_small_rois, getCentroidPositions, make_results
+from jy_tools import closeAll, test_Results
 from file_naming import FileNamer
 from java.io import File
 from collections import OrderedDict
-import os
+import sys, os
 reload_modules()
 
 class AnalysisSetup:
+	
+	ALL_FIBERTYPE_CHANNELS = ["Type I", "Type IIa", "Type IIx", "Type IIb"]
 	
 	CHANNEL_NAMES = {
 		"Border",
@@ -85,33 +88,29 @@ class AnalysisSetup:
 		self.channels = ChannelSplitter.split(self.imp)
 		
 	def rename_channels(self):
-		if detectMultiChannel(self.imp):
-			for channel in self.channels:
-				channel_abbrev = channel.title.split("-")[0]
-				channel.title = self.channel_dict[channel_abbrev]
-				if self.channel_dict[channel_abbrev] is not None and self.channel_dict[channel_abbrev] != self.DAPI_TITLE:
-					channel.show()
-				if self.channel_dict[channel_abbrev] == self.DAPI_TITLE:
-					self.dapi_channel = channel
-				if self.channel_dict[channel_abbrev] == self.FIBER_BORDER_TITLE:
-					self.border_channel = channel
-			self.open_channels = map(WM.getImage, WM.getIDList())
-			self.ft_channels = [channel for channel in self.open_channels if self.FIBER_BORDER_TITLE not in channel.title]
-			return True
-		else:
-			IJ.log("Detected only one channel, analysing only fiber morphology")
-			self.imp.show()
-			self.imp.title = self.FIBER_BORDER_TITLE
-			self.open_channels = [pickImage(self.imp.title)]
-			self.ft_channels = [None]
-			self.dapi_channel = [None]
-			self.border_channel = self.imp
-			return False
+		self.ft_channels = []
+		self.border_channel = None
+		self.dapi_channel = None
+	
+		for channel in self.channels:
+			channel_abbrev = channel.title.split("-")[0]
+			channel.title = self.channel_dict[channel_abbrev]
+#			if channel.title is not None and channel.title != self.DAPI_TITLE:
+#				channel.show()
+#				pass
+			if channel.title == self.DAPI_TITLE:
+				self.dapi_channel = channel
+			if channel.title == self.FIBER_BORDER_TITLE:
+				self.border_channel = channel
+			if channel.title in self.ALL_FIBERTYPE_CHANNELS:
+				self.ft_channels.append(channel)
+		# self.open_channels = map(WM.getImage, WM.getIDList())
+		return True
 
 	def assign_analyses(self):
 		self.FT = any(self.ft_channels)
-		self.Morph = any(self.FIBER_BORDER_TITLE in channel.title for channel in self.open_channels)
-		self.CN = self.DAPI_TITLE in self.channel_dict.values()
+		self.Morph = self.border_channel is not None
+		self.CN = self.dapi_channel is not None
 		
 	def get_channel_index(self, channel_name):
 		"""
@@ -228,15 +227,12 @@ class ImageStandardizer:
 			
 		return self.imp
 
-
-ch_list = []
-area_frac = OrderedDict()
-
-def fiber_type_channel(channel, threshold_method="Default", blur_radius=2, image_correction=None, border_clear=False):
+def fiber_type_channel(channel, rm_fiber, area_frac, threshold_method="Default", blur_radius=2, image_correction=None, border_clear=False):
 	IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
 	IJ.log("### Processing channel {} ###".format(channel.title))
-	IJ.selectWindow(channel.title)
 	channel_dup = channel.duplicate()
+	
+	# IJ.selectWindow(channel.title)
 	rm_fiber.runCommand("Show All")
 	IJ.run(channel, "Enhance Contrast", "saturated=0.35")
 	if border_clear:
@@ -245,7 +241,7 @@ def fiber_type_channel(channel, threshold_method="Default", blur_radius=2, image
 		
 	IJ.run(channel_dup, "Gaussian Blur...", "sigma={}".format(blur_radius))
 	
-	if image_correction == "background_subtraction":
+	if image_correction == "subtract_background":
 		rolling_ball_radius=50
 		IJ.run(channel_dup, "Subtract Background...", "rolling={}".format(rolling_ball))
 	elif image_correction == "pseudo_flat_field":
@@ -263,8 +259,6 @@ def fiber_type_channel(channel, threshold_method="Default", blur_radius=2, image
 	fiber_type_ch = ResultsTable().getResultsTable()
 	Ch=channel.getTitle()
 	area_frac[Ch+"_%-Area"] = fiber_type_ch.getColumn("%Area")
-	# fiber_area = fiber_type_ch.getColumn("%Area")
-	ch_list.append(Ch)
 
 	IJ.run("Clear Results", "")
 	channel_dup.setTitle(channel_dup.title.split('_')[1].replace(' ', '-'))
@@ -273,64 +267,66 @@ def fiber_type_channel(channel, threshold_method="Default", blur_radius=2, image
 #		IJ.log("### Clearing area outside border ###")
 #		channel_dup.setRoi(drawn_border_roi)
 #		IJ.run(channel_dup, "Clear Outside", "");
-#	if save_res:
-#		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
+	if save_res:
+		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
 
-def estimate_fiber_morphology(fiber_border):
-	fiber_border.show()
-	imp_border=pickImage(fiber_border)
-	IJ.run(imp_border, "Set Scale...", "distance={} known=1 unit=micron".format(scale_f))
+	return area_frac
+
+def estimate_fiber_morphology(fiber_border, scale, rm_fiber):
+	# fiber_border.show()
+	IJ.run(fiber_border, "Set Scale...", "distance={} known=1 unit=micron".format(scale))
 	IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
-	scale_f = imp_border.getCalibration().pixelWidth
-	rm_fiber.runCommand(imp_border, "Measure")
+	rm_fiber.runCommand(fiber_border, "Measure")
+	fiber_labels = rt.getColumnAsStrings("Label")
+	area_results = rt.getColumn("Area")
+	minferet_results = rt.getColumn("MinFeret")
+
 	nFibers = rm_fiber.getCount()
 	xFib, yFib = getCentroidPositions(rm_fiber)
 	for i in range(0, rm_fiber.getCount()):
-		rm_fiber.rename(i, str(i+1)+'_x' + str(int(round(xFib[i]))) + '-' + 'y' + str(int(round(yFib[i]))))
-	test_Results(xFib, yFib, scale_f)
+		xFiberLocation = int(round(xFib[i]))
+		yFiberLocation = int(round(yFib[i]))
+		rm_fiber.rename(i, str(i+1)+'_x' + str(xFiberLocation) + '-' + 'y' + str(yFiberLocation))
+	test_Results(xFib, yFib, scale)
+	IJ.run("Clear Results", "")
+	return fiber_labels, area_results, minferet_results
 
-def determine_central_nucleation(dapi_channel):
+def determine_central_nucleation(dapi_channel, rm_fiber, single_erosion=True):
 	pass
 	
-def (count_central, count_nuclei):
-	count_peripheral = {}
+def determine_number_peripheral(count_central, count_nuclei):
+	peripheral_dict = {}
 	for item in count_central:
-		count_peripheral[item] = count_nuclei[item]-count_central[item]
-	return count_peripheral
+		peripheral_dict[item] = count_nuclei[item]-count_central[item]
+	return Counter(peripheral_dict)
 
-def create_results_spreadsheet(rm_fiber, border_channel, area_frac, ch_list, count_central, count_nuclei, Morph, FT, CN):
+def create_results_dict(rm_fiber, border_channel, minferet_results, area_frac, ch_list, count_central, count_nuclei, Morph, FT, CN):
 	IJ.run("Set Measurements...", "area feret's display add redirect=None decimal=3");
 	IJ.log("### Compiling results ###")
 	results_dict = {}
-	rm_fiber.runCommand(image, "Measure")
 	rt = ResultsTable().getResultsTable()
-	results_dict["Label"] = rt.getColumnAsStrings("Label")
+	IJ.run("Clear Results")
+	results_dict["Label"] = fiber_labels
 	
 	if Morph:
-		IJ.run("Clear Results")
-		rm_fiber.runCommand(border_channel, "Measure")
-		results_dict["Area"] = rt.getColumn("Area")
-		results_dict["MinFeret"] = rt.getColumn("MinFeret")
+		results_dict["Area"] = area_results
+		results_dict["MinFeret"] = minferet_results
 	
 	if FT:
-		IJ.log("### Identifying fiber types ###")
-		identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False, prop_threshold = 50)
 		results_dict["Fiber_Type"] = identified_fiber_type
-		for key in area_frac.keys():
-			results_dict[key] = area_frac.get(key, None)
-		for label in range(rm_fiber.getCount()):
-			rm_fiber.rename(label, identified_fiber_type[label])
 	
 	if CN:
-		get_peripheral_nuclei_counts(count_central, count_nuclei)
+		
 		results_dict["Central Nuclei"] = count_central
-		results_dict["Peripheral Nuclei"] = Counter(count_peripheral)
+		results_dict["Peripheral Nuclei"] = count_peripheral
 		results_dict["Total Nuclei"] = count_nuclei
 	
 	return results_dict
+	
+def create_figures():
+	pass
 
 if __name__ == "__main__":
-	from jy_tools import closeAll
 	channel_list = [c1,c2,c3,c4]
 	IJ.run("Close All")
 	closeAll()
@@ -341,7 +337,7 @@ if __name__ == "__main__":
 	analysis.rename_channels() # Renames channels according
 	analysis.assign_analyses()
 	# rm_fiber.show()
-	remove_small_fibers = True
+	remove_small_fibers = False
 	remove_fibers_outside_border = analysis.get_manual_border()
 	create_results = False
 	
@@ -356,20 +352,30 @@ if __name__ == "__main__":
 		# edgeless, imp_base = ROI_border_exclusion(, , remove, separate_rois=separate_rois, GPU=gpu)
 #	if analysis.drawn_border_roi is not None:
 #		rm_fiber = remove_fibers_outside_border(rm_fiber)
-#
-	if analysis.FT:
-		for channel in analysis.ft_channels:
-			fiber_type_channel(channel)
 
 	if analysis.Morph:
-		estimate_fiber_morphology(analysis.border_channel)
-	
+		fiber_labels, area_results, minferet_results = estimate_fiber_morphology(analysis.border_channel, analysis.imp_scale, analysis.rm_fiber)
+
+	if analysis.FT:
+		area_frac = OrderedDict()
+		for channel in analysis.ft_channels:
+			fiber_type_channel(channel, analysis.rm_fiber, area_frac)
+		ch_list = [channel.title for channel in analysis.ft_channels]
+		IJ.log("### Identifying fiber types ###")
+		identified_fiber_type, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False, prop_threshold = 50)
+		for key in area_frac.keys():
+			results_dict[key] = area_frac.get(key, None)
+		for label in range(rm_fiber.getCount()):
+			rm_fiber.rename(label, identified_fiber_type[label])
+
 	if analysis.CN:
-		count_peripheral, count_nuclei = determine_central_nucleation(analysis.dapi_channel)
-	
+		count_central, count_nuclei = determine_central_nucleation(analysis.dapi_channel)
+		count_peripheral = determine_number_peripheral(count_central, count_nuclei)
+
 	if create_results:
-		create_results_spreadsheet()
-	
-	if create_figures:
-		pass
-	
+		results_dict = create_results_dict(rm_fiber, border_channel, area_frac, ch_list, count_central, count_nuclei, Morph, FT, CN)
+		make_results(results_dict, analysis.Morph, analysis.FT, analysis.CN)
+	print(analysis)
+#	
+#	if create_figures:
+#		pass

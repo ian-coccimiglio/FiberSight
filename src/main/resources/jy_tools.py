@@ -205,7 +205,6 @@ def test_Results(x, y, scale_f):
 	else:
 		print 'Result lengths are different', len(X_res), len(x)
 		print 'FAIL'
-	IJ.run("Clear Results")
 
 def main():
 	impPath = os.path.expanduser('~/SynologyDrive/Myosight/data/FR159_Fresh_Borders.tif')
