@@ -21,7 +21,7 @@ from java.awt import Color
 from java.awt.event import KeyListener, KeyAdapter
 #main_dir = os.path.dirname(os.path.abspath(__file__)) # path setting to the directory of the file
 #sys.path.append(main_dir)
-from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, test_Results, windowFind
+from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, windowFind
 from jy_tools import dirMake, saveFigure, pd, listProperties, resTable, userWait
 from java.awt.event import ActionListener
 from javax.swing import JToggleButton
