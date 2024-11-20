@@ -365,18 +365,76 @@ def getMyosightParameters():
 	return paramDict
 
 
-def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False, prop_threshold = 50):
+def choose_fiber(positively_marked, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False):
+	TYPE_I = "I"
+	TYPE_IIA = "IIa"
+	TYPE_IIX = "IIx"
+	TYPE_IIB = "IIb"
+	UND_TYPE = "UND"
+	UND_M_TYPE = "UND-"
+	UND_P_TYPE = "UND+"
+	ERROR_TYPE = "Err"
+	TYPE_I_IIA = set([TYPE_I, TYPE_IIA])
+	TYPE_IIA_IIX = set([TYPE_IIA, TYPE_IIX])
+	TYPE_IIX_IIB = set([TYPE_IIX, TYPE_IIB])
+	NC_I_IIX = set([TYPE_I, TYPE_IIX])
+	NC_I_IIB = set([TYPE_I, TYPE_IIB])
+	NC_IIA_IIB = set([TYPE_IIA, TYPE_IIB])
+	type_keys = positively_marked.keys()
+	type_set = set(type_keys)
+	
+	for key in type_keys:
+		if key not in [TYPE_I, TYPE_IIA, TYPE_IIX, TYPE_IIB]:
+			return ERROR_TYPE
+	
+	def hybrid_detection(ft1, ft2, hybrid_set, check_hybrid=False):
+		if check_hybrid:
+			ft_out = "{}/{}".format(ft1, ft2)
+		else:
+			if positively_marked[ft1] >= positively_marked[ft2]:
+				ft_out = ft1
+			else:
+				ft_out = ft2
+			
+		return ft_out
+	
+	if len(type_keys) == 0:
+		ft = UND_M_TYPE
+	elif len(type_keys) == 1:
+		ft = type_keys[0]
+	elif len(type_keys) == 2:
+		if(type_set == TYPE_I_IIA):
+			ft = hybrid_detection(TYPE_I, TYPE_IIA, TYPE_I_IIA, T1_hybrid)
+		if(type_set == TYPE_IIA_IIX):
+			ft = hybrid_detection(TYPE_IIA, TYPE_IIX, TYPE_IIA_IIX, T2_hybrid)
+		if(type_set == TYPE_IIX_IIB):
+			ft = hybrid_detection(TYPE_IIX, TYPE_IIB, TYPE_IIX_IIB, T3_hybrid)
+		if(type_set == NC_I_IIX or type_set == NC_I_IIB or type_set == NC_IIA_IIB):
+			ft = UND_TYPE
+	elif len(type_keys) == 3 or len(type_keys) == 4:
+		ft = UND_P_TYPE
+	else:
+		ft = ERROR_TYPE
+	return ft
+
+def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False, prop_threshold = 50):
 	"""
-	Classifies the fiber type from a list of ['I', 'IIa', 'IIx'] and associated percentages
+	Classifies the fiber type from a list of ['I', 'IIa', 'IIx', 'IIb'] and associated percentages
 	
 	Parameters
 	----------
 	fiber_type_keys : list of str
-		List of keys formatted as strings 'I', 'IIa', 'IIx'
+		List of keys formatted as strings 'I', 'IIa', 'IIx', 'IIb'
 	perc 			: list of float or int
 		List of percentages formatted as floats/integers
-	T1_hybrid		" bool
+	T1_hybrid		: bool
 		Boolean value indicating whether to count I/IIa hybrids
+	T2_hybrid		: bool
+		Boolean value indicating whether to count IIa/IIx hybrids
+	T3_hybrid		: bool
+		Boolean value indicating whether to count IIx/IIb hybrids
+	prop_threshold	: int
+		Integer value dictating the cut-off for a fiber to obtain a classification
 
 	Notes
 	-----
@@ -396,10 +454,13 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False
 		- I+IIa: Whichever channel is greater gets classified as either Type I or IIa
 			- If T1_hybrid is True, classify as I/IIa
 		- IIa+IIx: Hybrid IIa/IIx fiber
-		- I+IIx: UND (Undetermined, non-canonical)
+			- If T2_hybrid is True, classify as IIa/IIx
+		- IIx+IIb: Hybrid IIx/IIb fiber
+			- If T3_hybrid is True, classify as IIx/IIb
+		- I+IIx, I+IIb, IIa+IIb: UND (Undetermined, non-canonical)
 	
-	- If a fiber has 3 classifications, then:
-		- I+IIa+IIx: Classify fiber as UND+ (Undetermined, non-canonical). Possibly over-thresholded.
+	- If a fiber has 3+ classifications, then:
+		- Classify fiber as UND+ (Undetermined, non-canonical). Possibly over-thresholded.
 	
 	- In all other cases:
 		- Return "ERR" as an error code.
@@ -412,61 +473,28 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False
         - 'IIx'
         - 'I/IIa'
         - 'IIa/IIx'
+        - 'IIx/IIb'
         - 'UND'
         - 'UND-'
         - 'UND+'
         - 'ERR'
 	"""
-	fiber_props = {key:val for key, val in zip(fiber_type_keys,perc)}
-	t = []
-	for fiber, prop in fiber_props.items():
-		if fiber == "I":
-			if prop >= prop_threshold:
-				t.append(fiber)
-		if fiber == "IIa":
-			if prop >= prop_threshold:
-				t.append(fiber)
-		if fiber == "IIx":
-			if prop >= prop_threshold:
-				t.append(fiber)
-
-	if len(t) == 0:
-		ft = "UND-"
-	elif len(t) == 1:
-		ft = t[0]
-	elif len(t) == 2:
-		if(set(t) == set(["I", "IIa"])):
-			# This assumes no hybrid I/IIa
-			if T1_hybrid:
-				ft = "I/IIa"
-			if fiber_props["I"] >= fiber_props["IIa"]:
-				ft = "I"
-			else:
-				ft = "IIa"
-		if(set(t) == set(["I", "IIx"])):
-			ft = "UND"
-		if T2_hybrid:
-			if(set(t) == set(["IIa", "IIx"])):
-				ft = "IIa/IIx"
-		else:
-			if fiber_props["IIa"] >= fiber_props["IIx"]:
-				ft = "IIa"
-			else:
-				ft = "IIx"
-	elif len(t) == 3:
-		ft = "UND+"
-	else:
-		ft = "ERR"
+	positively_marked = {}
+	for fiber, prop in zip(fiber_type_keys,perc):
+		if prop >= prop_threshold:
+			positively_marked[fiber] = prop
+	print positively_marked
+	ft = choose_fiber(positively_marked, T1_hybrid, T2_hybrid, T3_hybrid)
 	
 	return(ft)
 
-def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False, prop_threshold = 50):
+def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False, prop_threshold = 50):
 	dom_list = []
 	result_dict = {}
 	zipped_data = zip(*multichannel_dict.values())
 	fiber_type_keys = [key.split(" ")[1].split("_%")[0] for key in multichannel_dict]
 	IJ.log("### Determining Fiber Types ###")
-	if set(fiber_type_keys).issubset(set([u"I", u"IIa", u"IIx"])):
+	if set(fiber_type_keys).issubset(set([u"I", u"IIa", u"IIx", u'IIb'])):
 		IJ.log("Fiber type keys are valid")
 	else:
 		IJ.log("Fiber type keys invalid")
@@ -477,7 +505,7 @@ def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False, prop_thresh
 			zipped_data[enum] = row
 		lrow = list(row)
 		result_dict[enum] = list(zipped_data[enum])
-		dom_list.append(determine_fiber_type(fiber_type_keys, lrow, T1_hybrid=T1_hybrid, prop_threshold=prop_threshold))
+		dom_list.append(determine_fiber_type(fiber_type_keys, lrow, T1_hybrid=T1_hybrid, T2_hybrid=T3_hybrid, T3_hybrid=T3_hybrid, prop_threshold=prop_threshold))
 	return dom_list, result_dict
 
 def determine_dominant_fiber(dom_list, channel_keys, lrow, positivity_threshold = 50):
