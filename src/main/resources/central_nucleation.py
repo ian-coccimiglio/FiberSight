@@ -95,6 +95,9 @@ def fill_color_rois(central_fibers, percReductions, rm_fiber):
 	for non_peripheral in set(range(rm_fiber.getCount()))-set(central_fibers[0.0]):
 		roiRecolor(rm_fiber.getRoi(non_peripheral), Color.BLACK)
 	
+class centralityDetection():
+	
+
 
 if __name__ == "__main__":
 	main_dir = "/home/ian/data/test_Experiments/Experiment_4_Central_Nuc/"
