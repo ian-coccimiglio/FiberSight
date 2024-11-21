@@ -188,49 +188,7 @@ class AnalysisSetup:
 				"Centronucleation: {}\n"
 				"Fiber-Typing: {}".format(self.raw_image_path, self.all_channels, self.channel_dict, self.Morph, self.CN, self.FT))
 
-def fiber_type_channel(channel, rm_fiber, area_frac, threshold_method="Default", blur_radius=2, image_correction=None, border_clear=False, save_res=False):
-	IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
-	IJ.log("### Processing channel {} ###".format(channel.title))
-	channel_dup = channel.duplicate()
-	
-	# IJ.selectWindow(channel.title)
-	rm_fiber.runCommand("Show All")
-	IJ.run(channel, "Enhance Contrast", "saturated=0.35")
-	if border_clear:
-		channel_dup.setRoi(drawn_border_roi)
-		IJ.run(channel_dup, "Clear Outside", "")
-		
-	IJ.run(channel_dup, "Gaussian Blur...", "sigma={}".format(blur_radius))
-	
-	if image_correction == "subtract_background":
-		rolling_ball_radius=50
-		IJ.run(channel_dup, "Subtract Background...", "rolling={}".format(rolling_ball))
-	elif image_correction == "pseudo_flat_field":
-		ft_flat_blurring=100
-		IJ.run(channel_dup, "Pseudo flat field correction", "blurring={} hide".format(ft_flat_blurring))
-	else:
-		pass
-		
-	IJ.setAutoThreshold(channel_dup, "{} dark no-reset".format(threshold_method));
-	#channel_dup.show()
-	Prefs.blackBackground = True
-	IJ.run(channel_dup, "Convert to Mask", "");
-	IJ.run(channel_dup, "Despeckle", "")
-	rm_fiber.runCommand(channel_dup, "Measure")
-	fiber_type_ch = ResultsTable().getResultsTable()
-	fiber_type_frac = fiber_type_ch.getColumn("%Area")
 
-	IJ.run("Clear Results", "")
-	channel_dup.setTitle(channel_dup.title.split('_')[1].replace(' ', '-'))
-	IJ.log("Saving channel mask: {}".format(channel_dup.title))
-#	if drawn_border_roi is not None:
-#		IJ.log("### Clearing area outside border ###")
-#		channel_dup.setRoi(drawn_border_roi)
-#		IJ.run(channel_dup, "Clear Outside", "");
-	if save_res:
-		IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
-
-	return fiber_type_frac
 
 def estimate_fiber_morphology(fiber_border, scale, rm_fiber):
 	# fiber_border.show()
@@ -274,6 +232,8 @@ if __name__ == "__main__":
 	create_results = False
 	results_dict = {}
 	
+	analysis.border_channel.show()
+	
 	if remove_small_fibers:
 		# Assumption is that the image does not have scale data
 		min_fiber_size = 10
@@ -292,14 +252,22 @@ if __name__ == "__main__":
 	if analysis.FT:
 		area_frac = OrderedDict()
 		for channel in analysis.ft_channels:
-			area_frac["{}_%-Area".format(channel.getTitle())] = fiber_type_channel(channel, analysis.rm_fiber, area_frac)
-		IJ.log("### Identifying Positive Fraction Fiber Tyoe ###")
+			area_frac["{}_%-Area".format(channel.getTitle())], channel_dup = fiber_type_channel(channel, analysis.rm_fiber, area_frac)
+		IJ.log("### Identifying Positive Fraction Fiber Type ###")
 		for key in area_frac.keys():
 			results_dict[key] = area_frac.get(key, None)
 		ch_list = [channel.title for channel in analysis.ft_channels]
 		IJ.log("### Identifying fiber types ###")
 		identified_fiber_types, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False, prop_threshold = 50)
 		results_dict["Fiber_Type"] = identified_fiber_types
+		
+		if drawn_border_roi is not None:
+			IJ.log("### Clearing area outside border ###")
+			channel_dup.setRoi(drawn_border_roi)
+			IJ.run(channel_dup, "Clear Outside", "");
+		if save_res:
+			IJ.log("Saving channel mask: {}".format(channel_dup.title))
+			IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+threshold_method)
 
 	if analysis.CN:
 		results_dict["Central Nuclei"], results_dict["Total Nuclei"] = determine_central_nucleation(analysis.dapi_channel)
