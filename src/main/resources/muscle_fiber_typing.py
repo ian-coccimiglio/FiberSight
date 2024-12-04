@@ -1,3 +1,7 @@
+from ij import IJ, ImagePlus, Prefs, WindowManager as WM
+from ij.measure import ResultsTable
+import math
+
 def choose_fiber(positively_marked, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False):
 	"""
 	Bins a muscle fiber into one of the following types:
@@ -197,7 +201,7 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 	
 	if image_correction == "subtract_background":
 		rolling_ball_radius=50
-		IJ.run(channel_dup, "Subtract Background...", "rolling={}".format(rolling_ball))
+		IJ.run(channel_dup, "Subtract Background...", "rolling={}".format(rolling_ball_radius))
 	elif image_correction == "pseudo_flat_field":
 		ft_flat_blurring=100
 		IJ.run(channel_dup, "Pseudo flat field correction", "blurring={} hide".format(ft_flat_blurring))

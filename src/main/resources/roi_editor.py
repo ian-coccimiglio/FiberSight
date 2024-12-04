@@ -48,8 +48,8 @@ class ManualRoiEditor:
 		self.rm = self.draw_roi(save)
 
 	def save_rois(self):
-		if not os.path.exists(self.roi_path):
-			roi_dir_name = os.path.dirname(self.roi_path)
+		roi_dir_name = os.path.dirname(self.roi_path)
+		if not os.path.exists(roi_dir_name):
 			IJ.log("### Making directory: {} ###".format(roi_dir_name))
 			os.mkdir(roi_dir_name, int('755',8))
 		IJ.log("### Saving ROI to {} ###".format(self.roi_path))

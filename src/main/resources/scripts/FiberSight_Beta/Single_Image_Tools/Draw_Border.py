@@ -16,4 +16,4 @@ from file_naming import FileNamer
 reload_modules()
 raw_path_str = raw_path.getPath()
 roi_editor = ManualRoiEditor("border_roi", image_path=raw_path_str)
-# roi_editor.edit_roi(save=True)
+roi_editor.edit_roi(save=True)
