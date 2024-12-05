@@ -5,7 +5,8 @@ class FileNamer:
 		"fiber_rois": "_fibers_RoiSet.zip",
 		"border_roi": "_border.roi",
 		"results": "_results.csv",
-		"masks": "_masks.png"
+		"masks": "_masks.png",
+		"border_exclusion": "_fibers_RoiSet.zip"
 		# more can be added as necessary
 	}
 	
@@ -13,7 +14,9 @@ class FileNamer:
 		"border_roi": "border_rois",
 		"results": "results",
 		"fiber_rois": "cellpose_rois",
-		"combined_rois": "combined_rois"
+		"combined_rois": "combined_rois",
+		"border_exclusion": "border_excluded_rois"
+		# more can be added as necessary
 	}
 	
 	COMPOUND_EXTENSIONS = {
@@ -26,10 +29,12 @@ class FileNamer:
 		self.image_name = os.path.basename(image_path)
 		self.image_dir = os.path.dirname(image_path)
 		self.experiment_dir = os.path.dirname(self.image_dir)
+		self.border_exclusion_dir = self.get_directory("border_exclusion")
 		self.base_name = self.remove_extension()
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
+		self.excluded_border_fiber_rois_path = self.get_path("border_exclusion")
 	
 	def get_directory(self, analysis_type):
 		return os.path.join(self.experiment_dir, self.DIRECTORIES[analysis_type])
@@ -69,12 +74,15 @@ class FileNamer:
 		"""
 		String representation of the file paths
 		"""
-		return ("Image Name: {}\n"
-				"Image Directory: {}\n"
-				"Experiment Directory: {}\n"
-				"Border Path: {}\n"
-				"Cellpose Fiber ROI Path: {}\n".format(self.image_name, self.image_dir, self.experiment_dir, self.border_path, self.fiber_roi_path))
-		
+		return ("image_name: {}\n"
+				"base_name: {}\n"
+				"image_dir: {}\n"
+				"experiment_dir: {}\n"
+				"border_exclusion_dir: {}\n"
+				"border_path: {}\n"
+				"fiber_roi_path: {}\n"
+				"excluded_border_fiber_rois_path: {}\n".format(self.image_name, self.base_name, self.image_dir, self.experiment_dir, self.border_exclusion_dir, self.border_path, self.fiber_roi_path, self.excluded_border_fiber_rois_path))
+
 if __name__ == "__main__":
 	# Usage #
 	namer = FileNamer(raw_path.path)
