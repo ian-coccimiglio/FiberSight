@@ -226,7 +226,7 @@ def create_figures():
 channel_list = [c1,c2,c3,c4]
 
 namer = FileNamer(raw_image.path)
-image_names = os.listdir(namer.image_dir)
+image_names = [r for r in os.listdir(namer.image_dir) if 'sol' in r]
 fiber_roi_dir = os.path.join(namer.experiment_dir, "border_excluded_rois")
 fiber_roi_names = os.listdir(fiber_roi_dir)
 
@@ -309,7 +309,6 @@ for raw_image_name, fiber_roi_name in matched_files:
 		if save_res:
 			results_path = os.path.join(results_dir, analysis.namer.base_name + "_results.csv")
 			IJ.saveAs("Results", results_path)
-	
 	print(analysis)
 
 
