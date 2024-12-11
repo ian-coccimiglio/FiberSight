@@ -226,7 +226,7 @@ def create_figures():
 channel_list = [c1,c2,c3,c4]
 
 namer = FileNamer(raw_image.path)
-image_names = [r for r in os.listdir(namer.image_dir) if 'sol' in r]
+image_names = [r for r in os.listdir(namer.image_dir) if 'Sol' in r]
 fiber_roi_dir = os.path.join(namer.experiment_dir, "border_excluded_rois")
 fiber_roi_names = os.listdir(fiber_roi_dir)
 
