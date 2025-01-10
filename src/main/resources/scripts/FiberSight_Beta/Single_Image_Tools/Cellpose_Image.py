@@ -14,8 +14,7 @@ from ij import IJ
 from ij.plugin import ChannelSplitter
 from ij.plugin.frame import RoiManager
 from jy_tools import closeAll, list_files, reload_modules
-from image_tools import runCellpose, detectMultiChannel, \
-batch_open_images, split_string, convertLabelsToROIs, read_image
+from image_tools import runCellpose, detectMultiChannel, convertLabelsToROIs, read_image
 from utilities import get_model_path, download_model
 from analysis_setup import FileNamer
 reload_modules()
