@@ -12,8 +12,10 @@ from ij import IJ
 import os, sys
 from jy_tools import closeAll, list_files, reload_modules
 from roi_editor import ManualRoiEditor
-from file_naming import FileNamer
+from analysis_setup import FileNamer
 reload_modules()
-raw_path_str = raw_path.getPath()
-roi_editor = ManualRoiEditor("border_roi", image_path=raw_path_str)
+namer = FileNamer(raw_path.path)
+roi_directory = "border_roi"
+namer.generate_directory(roi_directory)
+roi_editor = ManualRoiEditor(roi_directory, image_path=namer.image_path)
 roi_editor.edit_roi(save=True)
