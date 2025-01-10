@@ -208,9 +208,9 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 	else:
 		pass
 	
-	IJ.setRawThreshold(channel_dup, 300, 65535)
+	# IJ.setRawThreshold(channel_dup, 200, 65535)
 	
-	# IJ.setAutoThreshold(channel_dup, "{} dark no-reset".format(threshold_method));
+	IJ.setAutoThreshold(channel_dup, "{} dark no-reset".format(threshold_method));
 	#channel_dup.show()
 	Prefs.blackBackground = True
 	IJ.run(channel_dup, "Convert to Mask", "");

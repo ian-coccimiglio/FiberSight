@@ -18,6 +18,15 @@ from ij.gui import Overlay, Roi
 from math import sqrt, pi
 from java.awt import Color
 
+def determine_central_nucleation(dapi_channel, rm_fiber, single_erosion=True):
+	pass
+	
+def determine_number_peripheral(count_central, count_nuclei):
+	peripheral_dict = {}
+	for item in count_central:
+		peripheral_dict[item] = count_nuclei[item]-count_central[item]
+	return Counter(peripheral_dict)
+
 def analyze_particles_get_roi_array(imp, settings):
 	newRM = RoiManager(False)
 	PA.setRoiManager(newRM)
