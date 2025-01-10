@@ -46,7 +46,7 @@ class FileNamer:
 		self.results_path = self.get_path("results")
 		self.excluded_border_fiber_rois_path = self.get_path("border_exclusion")
 	
-	def generate_directory(self, directory):
+	def create_directory(self, directory):
 		if directory not in self.DIRECTORIES:
 			IJ.error("Unexpected directory")
 			pass
@@ -289,6 +289,5 @@ if __name__ == "__main__":
 	# Usage #
 	namer = FileNamer(raw_path.path)
 	analysis = AnalysisSetup(raw_path.path, ["Border"])
-	#print namer.get_directory("border_roi")
-	#print namer.get_path("border_roi")
 	print(namer)
+	print(analysis)
