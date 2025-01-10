@@ -1,6 +1,13 @@
 from ij import IJ
 from ij.io import Opener
 import os, sys
+import urllib2
+
+CELLPOSE_MODELS = {
+	"WGA_21":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/WGA_21",
+	"HE_30":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/HE_30",
+	"PSR_9":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/PSR_9"
+}
 
 def make_directories(main_path, folder_names):
 	IJ.log("### Generating Folders ###")
@@ -31,14 +38,61 @@ def is_experiment_dir(main_dir, raw_image_dir):
 	return(False)
 
 def get_drawn_border_roi(border_path):
-    if not os.path.exists(border_path):
-    	IJ.log("No manual drawn border exists")
-        return None
-    else:
-        IJ.log("### Getting ROI border for visualization ###")
-        return Opener().openRoi(border_path)
+	if not os.path.exists(border_path):
+		IJ.log("No manual drawn border exists")
+		return None
+	else:
+		IJ.log("### Getting ROI border for visualization ###")
+		return Opener().openRoi(border_path)
 
-    return None
+	return None
+
+def download_from_github(raw_url, destination):
+	"""
+	Downloads a file from GitHub URL in format [https://raw.githubusercontent.com/username/repo/branch/...]
+	"""
+	try:
+		response = urllib2.urlopen(raw_url)
+		IJ.log("Downloading {} to {}".format(raw_url, destination))
+		with open(destination, 'wb') as f:
+			f.write(response.read())
+		IJ.log("Successful downloading file {}".format(raw_url))
+		return True
+	except urllib2.URLError as e:
+		IJ.log("Error downloading file: {}".format(e))
+		return False
+
+def get_model_path(model_name):
+	"""
+	Returns a local model path corresponding to the Cellpose standard path (usually in the ~/.cellpose/models/ directory)
+	"""
+	homedir = os.path.expanduser("~")
+	model_path = os.path.join(homedir, ".cellpose/models/", model_name)	
+	return model_path
+
+def download_model(model_name):
+	"""
+	Downloads a cellpose model to the usual Cellpose directory.
+	"""
+	if model_name not in CELLPOSE_MODELS and model_name is not "cyto3":
+		IJ.error("Error: {} is not a known model".format(model_name))
+		return False
+	
+	if model_name == "cyto3":
+		IJ.log("Downloading model from the Cellpose repository")
+		return True
+	
+	model_path = get_model_path(model_name)
+	model_dir = os.path.dirname(model_path)
+	if not os.path.exists(model_dir):
+		os.makedirs(model_dir)
+	
+	if os.path.exists(model_path):
+		IJ.log("{} model already downloaded!".format(model_name))
+		return True
+	
+	download_from_github(CELLPOSE_MODELS[model_name], model_path)
+	return True
 
 def generate_required_directories(experiment_dir, process):
 	dir_list = []
