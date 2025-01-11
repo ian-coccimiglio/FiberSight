@@ -1,6 +1,5 @@
 #@ File(label='Select a directory containing raw images', style='directory') raw_dir
 #@ String(label='File types', value='tif;png;nd2') file_types
-#@ Boolean(label='Recursive search', value=False) do_recursive
 #@ String(visibility=MESSAGE, value="<html>Filter for a specific string in the file name</html>") docmsg
 #@ String(label='Filter', value='') filters
 #@ String(visibility=MESSAGE, value="<html>Set 0 if the images are single-channel</html>") docChannel
@@ -15,12 +14,9 @@
 '''
 
 import os
-from ij import IJ, WindowManager as WM
-from ij.plugin import ChannelSplitter
-from ij.plugin.frame import RoiManager
+from ij import IJ
 from jy_tools import closeAll, list_files
-from image_tools import runCellpose, detectMultiChannel, batch_open_images, split_string, convertLabelsToROIs
-from utilities import generate_required_directories
+from image_tools import runCellpose, batch_open_images, split_string
 
 IJ.log("### Running Cellpose Batch mode ###")
 
@@ -28,6 +24,7 @@ def main():
 	IJ.run("Close All")
 	closeAll()
 	# Run the batch_open_images() function using the Scripting Parameters.
+	do_recursive = False
 	image_paths = batch_open_images(raw_dir,
 								split_string(file_types),
 								split_string(filters),

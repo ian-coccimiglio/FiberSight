@@ -16,6 +16,6 @@ from analysis_setup import FileNamer
 reload_modules()
 namer = FileNamer(raw_path.path)
 roi_directory = "border_roi"
-namer.generate_directory(roi_directory)
+namer.create_directory(roi_directory)
 roi_editor = ManualRoiEditor(roi_directory, image_path=namer.image_path)
 roi_editor.edit_roi(save=True)
