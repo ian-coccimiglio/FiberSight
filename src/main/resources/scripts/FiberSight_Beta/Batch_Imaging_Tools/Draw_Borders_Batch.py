@@ -1,11 +1,10 @@
 #@ File (label = "Select a directory containing raw images", style="directory", persist=true) my_dir
 
 from ij import IJ
-import os, sys
-from jy_tools import closeAll, list_files
+import os
+from jy_tools import closeAll
 from image_tools import batch_open_images
 from analysis_setup import FileNamer
-from utilities import generate_required_directories
 
 IJ.log("\n### Drawing Skeletal Muscle Border ###")
 raw_files = batch_open_images(my_dir.getPath())

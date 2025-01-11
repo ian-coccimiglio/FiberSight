@@ -16,15 +16,14 @@ class ManualRoiEditor:
 			self.imp = read_image(image_path)
 		else:
 			self.imp = IJ.getImage()
-		self.image_path = image_path
 		self.rm = RoiManager().getRoiManager()
 		if roi_path is not None:
 			self.roi_path = roi_path
 		else:
-			self.roi_path = self.namer.get_path(analysis_type)
+			self.roi_path_out = self.namer.get_path(analysis_type)
 		self.imp.show()
 		
-	def draw_roi(self, save=True):
+	def draw_roi(self, save_in_place=True):
 		IJ.log("Drawing ROI for: {}".format(self.imp.title))
 		self.rm.runCommand(self.imp, "Remove Channel Info") # Fixes ROI deselction problem when switching channels
 		self.rm.deselect()
@@ -35,26 +34,38 @@ class ManualRoiEditor:
 			roi = self.imp.getRoi()
 			self.rm.addRoi(roi)
 		
-		if save:
+		if save_in_place:
+			self.save_rois_in_place()
+		else:
 			self.save_rois()
 		self.clean_up()
 	
-	def edit_roi(self, save=True):
+	def edit_roi(self, save_in_place=True):
 		if os.path.exists(self.roi_path):
 			IJ.log("ROI File already exists {}, edit ROI if desired".format(self.imp.title))
 			self.rm.open(self.roi_path)
 			self.rm.runCommand("Show All with Labels")
 			self.rm.select(0)
-		self.rm = self.draw_roi(save)
+		self.rm = self.draw_roi(save_in_place)
+
+	def save_rois_in_place(self):		
+		if not os.path.exists(self.roi_path):
+			roi_dir_name = os.path.dirname(self.roi_path)
+			if not os.path.exists(roi_dir_name):
+					IJ.log("### Making directory: {} ###".format(roi_dir_name))
+					os.mkdir(roi_dir_name, int('755',8))
+			IJ.log("### Saving ROI to {} ###".format(self.roi_path_out))
+			self.rm.save(self.roi_path)
 
 	def save_rois(self):
-		roi_dir_name = os.path.dirname(self.roi_path)
 		if not os.path.exists(roi_dir_name):
 			IJ.log("### Making directory: {} ###".format(roi_dir_name))
 			os.mkdir(roi_dir_name, int('755',8))
-		IJ.log("### Saving ROI to {} ###".format(self.roi_path))
-		self.rm.save(self.roi_path)
-		
+
+		roi_dir_name = os.path.dirname(self.roi_path_out)
+		IJ.log("### Saving ROI to {} ###".format(self.roi_path_out))
+		self.rm.save(self.roi_path_out)
+	
 	def clean_up(self):
 		self.imp.hide()
 		self.rm.close()

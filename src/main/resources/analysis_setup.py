@@ -15,7 +15,8 @@ class FileNamer:
 		"border_roi": "_border.roi",
 		"results": "_results.csv",
 		"masks": "_masks.png",
-		"border_exclusion": "_fibers_RoiSet.zip"
+		"border_exclusion": "_fibers_RoiSet.zip",
+		"manual_rois": "_fibers_RoiSet.zip",
 		# more can be added as necessary
 	}
 	
@@ -24,6 +25,7 @@ class FileNamer:
 		"results": "results",
 		"fiber_rois": "cellpose_rois",
 		"combined_rois": "combined_rois",
+		"manual_rois": "manually_edited_rois",
 		"border_exclusion": "border_excluded_rois"
 		# more can be added as necessary
 	}
@@ -44,6 +46,7 @@ class FileNamer:
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
+		self.manual_rois_path = self.get_path("manual_rois")
 		self.excluded_border_fiber_rois_path = self.get_path("border_exclusion")
 	
 	def create_directory(self, directory):
@@ -116,7 +119,8 @@ class FileNamer:
 				"border_exclusion_dir: {}\n"
 				"border_path: {}\n"
 				"fiber_roi_path: {}\n"
-				"excluded_border_fiber_rois_path: {}\n".format(self.image_path, self.image_name, self.base_name, self.image_dir, self.experiment_dir, self.border_exclusion_dir, self.border_path, self.fiber_roi_path, self.excluded_border_fiber_rois_path))
+				"manual_rois_path: {}\n"
+				"excluded_border_fiber_rois_path: {}\n".format(self.image_path, self.image_name, self.base_name, self.image_dir, self.experiment_dir, self.border_exclusion_dir, self.border_path, self.fiber_roi_path, self.manual_rois_path, self.excluded_border_fiber_rois_path))
 				
 class AnalysisSetup:
 	

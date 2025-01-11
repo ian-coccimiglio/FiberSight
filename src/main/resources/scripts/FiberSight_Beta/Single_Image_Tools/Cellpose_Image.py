@@ -12,12 +12,10 @@ import os
 import time
 from ij import IJ
 from ij.plugin import ChannelSplitter
-from ij.plugin.frame import RoiManager
-from jy_tools import closeAll, list_files, reload_modules
+from jy_tools import reload_modules
 from image_tools import runCellpose, detectMultiChannel, convertLabelsToROIs, read_image
 from utilities import get_model_path, download_model
 from analysis_setup import FileNamer
-reload_modules()
 
 def main():
 	namer = FileNamer(raw_path.path)
@@ -28,6 +26,7 @@ def main():
 		IJ.log("Downloading model to {}".format(model_path))
 		download_model(model)
 
+	print namer.image_path
 	original_imp = read_image(namer.image_path)
 	original_imp.show()
 	
@@ -46,8 +45,6 @@ def main():
 			original_imp.hide()
 	
 	image_to_segment = IJ.getImage()
-	
-	# print original_imp.NChannels
 	IJ.log("### Running Cellpose on "+image_to_segment.title+" ###")
 	
 	start = time.time()
@@ -67,7 +64,7 @@ def main():
 	if save_rois:
 		IJ.log("### Saving ROIs ###")
 		IJ.log("Saving to standard location: {}".format(namer.fiber_roi_path))
-		namer.generate_directory("fiber_rois")
+		namer.create_directory("fiber_rois")
 		rm_fiber.save(namer.fiber_roi_path)
 	
 if __name__ == "__main__":
