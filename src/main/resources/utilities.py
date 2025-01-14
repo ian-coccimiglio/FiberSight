@@ -89,10 +89,10 @@ def download_model(model_name):
 	
 	if os.path.exists(model_path):
 		IJ.log("{} model already downloaded!".format(model_name))
-		return True
+		return model_path
 	
 	download_from_github(CELLPOSE_MODELS[model_name], model_path)
-	return True
+	return model_path
 
 def generate_required_directories(experiment_dir, process):
 	dir_list = []

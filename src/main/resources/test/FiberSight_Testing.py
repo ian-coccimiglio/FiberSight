@@ -13,7 +13,7 @@ reload_modules()
 
 src_file_path = inspect.getfile(lambda: None) # works instead of __file__ in jython
 test_directory = os.path.dirname(src_file_path)
-normal_experiment_dir = os.path.join(test_directory, "test_experiment/")
+normal_experiment_dir = os.path.join(test_directory, "test_experiment_brightfield/")
 normal_image_dir = os.path.join(normal_experiment_dir, "raw/")
 normal_image_path = os.path.join(normal_image_dir, "V52_patch_1.tif")
 
@@ -53,6 +53,8 @@ class TestAnalysisSetup(unittest.TestCase):
 		WM.getWindow("Log").close()		
 
 class TestDownloadModel(unittest.TestCase):
+	def setUp(self):
+		IJ.redirectErrorMessages()
 	def test_download_model(self):
 		self.assertTrue(download_model("WGA_21"), "Model not downloaded properly")
 		self.assertFalse(download_model("WGA_22"), "Model should not exist")
@@ -61,6 +63,7 @@ class TestCellpose(unittest.TestCase):
 	def setUp(self):
 		self.setup = AnalysisSetup(normal_image_path, ["Border", "None", "None", "None"])
 		self.setup.imp.show()
+		IJ.redirectErrorMessages()
 	
 	def compare_label_to_original(self, original_image):
 		self.label_image = IJ.getImage()
@@ -73,21 +76,38 @@ class TestCellpose(unittest.TestCase):
 		self.assertGreater(self.max_val, 0, "No masks found in output")
 		self.assertLess(self.max_val, 1000, "Suspiciously high number of masks")
 		IJ.log("Max number of labels for {} model: {}".format(self.model_name, str(self.max_val)))
+		self.label_image.close()
 		
 	def test_cyto3(self):
 		self.model_name = "cyto3"
 		model_path = get_model_path(self.model_name)
-		cellpose_str = runCellpose(self.setup.imp, model_type="", model_path=model_path, diameter=57)
+		cellpose_str = runCellpose(self.setup.imp, model_path=model_path, diameter=57)
 		self.compare_label_to_original(self.setup.imp)
 		
 	def test_HE_30(self):
 		self.model_name = "HE_30"
 		model_path = get_model_path(self.model_name)
-		cellpose_str = runCellpose(self.setup.imp, model_type="", model_path = model_path, diameter=57)
+		homedir=os.path.expanduser("~")
+		env_path=os.path.join(homedir, "miniconda3/envs/cellpose")
+		cellpose_str = runCellpose(self.setup.imp, env_path=env_path, model_path = model_path, diameter=57)
+		self.assertTrue(cellpose_str)
 		self.compare_label_to_original(self.setup.imp)
+		
+	def test_bad_env(self):
+		self.model_name = "HE_30"
+		model_path = get_model_path(self.model_name)
+		homedir=os.path.expanduser("~")
+		env_path=os.path.join(homedir, "miniconda3/envs/cellposea")
+		cellpose_str = runCellpose(self.setup.imp, env_path=env_path, model_path = model_path, diameter=57)
+		self.assertFalse(cellpose_str)
+
+	def test_bad_model(self):
+		self.model_name = "bad_model"
+		model_path = get_model_path(self.model_name)
+		cellpose_str = runCellpose(self.setup.imp, model_path = model_path, diameter=57)
+		self.assertFalse(cellpose_str)
 
 	def tearDown(self):
-		self.label_image.close()
 		self.setup.imp.close()
 		# WM.getWindow("Log").close()	
 		self.setup.rm_fiber.close()

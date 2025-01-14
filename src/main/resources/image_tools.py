@@ -1,33 +1,20 @@
 from ij import IJ, ImagePlus, Prefs, WindowManager as WM
-from ij.macro import Variable
-from ij.io import OpenDialog, FileInfo, Opener
-from ij.process import ImageProcessor
+from ij.io import Opener
 from ij.measure import ResultsTable, Measurements
-from ij.plugin import RoiEnlarger, RGBStackMerge
+from ij.plugin import RGBStackMerge
 from ij.plugin.frame import RoiManager
 from ij.gui import GenericDialog, WaitForUserDialog, Overlay, Line
-from datetime import time, tzinfo
-from tempfile import NamedTemporaryFile
-from os import listdir
-from os.path import isfile, join
-import time
-import datetime
-import math
 import os, sys
 from math import sqrt
-from net.imagej.updater import UpdateService
 from collections import Counter, OrderedDict
 from java.awt import Color
-from java.awt.event import KeyListener, KeyAdapter
-#main_dir = os.path.dirname(os.path.abspath(__file__)) # path setting to the directory of the file
-#sys.path.append(main_dir)
+from java.awt.event import KeyListener, ActionListener
 from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, windowFind
 from jy_tools import dirMake, saveFigure, pd, listProperties, resTable, userWait
-from java.awt.event import ActionListener
 from javax.swing import JToggleButton
 from java.io import File
 from CZIstackchoice import CZIopener
-from file_naming import FileNamer
+from utilities import download_model
 
 def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
     '''Open all files in the given folder.
@@ -274,21 +261,58 @@ def convertLabelsToROIs(imp_labels):
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 		return None
 
-def runCellpose(image, model_type="cyto3", model_path = "", env_type = "conda", diameter=30, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0):
-	homedir = os.path.expanduser("~")
-	env_path = os.path.join(homedir, "miniconda3", "envs", "cellpose")
+def runCellpose(image, 
+	env_path=None,
+	model_path = "", 
+	env_type = "conda", 
+	diameter=30, 
+	cellprob_threshold=0.0, 
+	flow_threshold=0.4, 
+	ch1=0, 
+	ch2=0):
+	
+	if env_path is None:
+		homedir = os.path.expanduser("~")
+		
+		possible_paths = [
+			os.path.join(homedir, "miniconda3", "envs", "cellpose"),
+			os.path.join(homedir, "miniconda", "envs", "cellpose"),
+			os.path.join(homedir, "anaconda3", "envs", "cellpose")
+		]
+		for path in possible_paths:
+			IJ.log("Checking path at {}".format(path))
+			if os.path.exists(path):
+				IJ.log("Found cellpose environment")
+				env_path = path
+				break
+		else:
+			IJ.error("Cellpose environment not found", "Checked typical paths,\nEnsure to install Cellpose and set the appropriate env_path")
+			return False
+	elif not os.path.exists(env_path):
+		IJ.error("Cellpose environment not found", "Checked path at {},\nEnsure to install Cellpose and set the appropriate env_path".format(env_path))
+		return False
+	
 	additional_flags = "[--use_gpu, --cellprob_threshold, {}, --flow_threshold, {}]".format(cellprob_threshold, flow_threshold)
 	
-	cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model_type, model_path, diameter, ch1, ch2, additional_flags)
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
-			if "diameter=0" in cellpose_str:
-				IJ.log("Cellpose with Estimated Diameter")
+			if not model_path:
+				model="cyto3"
+			if os.path.exists(model_path):
+				model=""
+			else:
+				model_path = download_model(os.path.basename(model_path))
+				if not model_path:
+					return False
+				model=""
+			cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model, model_path, diameter, ch1, ch2, additional_flags)
 			IJ.run(image, "Cellpose ...", cellpose_str)
-		except:
-			pass
+
+		except Exception as e:
+			IJ.log(e)
+			
 	else:
-		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
+		IJ.log("Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/")
 	
 	return cellpose_str
 
