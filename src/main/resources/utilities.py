@@ -4,9 +4,9 @@ import os, sys
 import urllib2
 
 CELLPOSE_MODELS = {
-	"WGA_21":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/WGA_21",
-	"HE_30":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/HE_30",
-	"PSR_9":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/edgeremove/models/PSR_9"
+	"WGA_21":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/WGA_21",
+	"HE_30":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/HE_30",
+	"PSR_9":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/PSR_9"
 }
 
 def make_directories(main_path, folder_names):
@@ -74,14 +74,13 @@ def download_model(model_name):
 	"""
 	Downloads a cellpose model to the usual Cellpose directory.
 	"""
-	if model_name not in CELLPOSE_MODELS and model_name is not "cyto3":
+	
+	cellpose_default_models = ["cyto2", "cyto3"]
+	
+	if model_name not in CELLPOSE_MODELS and model_name not in cellpose_default_models:
 		IJ.error("Error: {} is not a known model".format(model_name))
 		return False
-	
-	if model_name == "cyto3":
-		IJ.log("Downloading model from the Cellpose repository")
-		return True
-	
+		
 	model_path = get_model_path(model_name)
 	model_dir = os.path.dirname(model_path)
 	if not os.path.exists(model_dir):
@@ -90,6 +89,10 @@ def download_model(model_name):
 	if os.path.exists(model_path):
 		IJ.log("{} model already downloaded!".format(model_name))
 		return model_path
+	
+	if model_name in cellpose_default_models:
+		IJ.log("cyto2/cyto3 models not found in main GitHub repository, Cellpose should download it automatically.")
+		return False
 	
 	download_from_github(CELLPOSE_MODELS[model_name], model_path)
 	return model_path
