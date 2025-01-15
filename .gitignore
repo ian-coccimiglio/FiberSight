@@ -1,4 +1,6 @@
 target/
+src/main/resources/test/test_experiment_brightfield/cellpose_rois/
+src/main/resources/test/test_experiment_fluorescence/border_rois/
 .DS_Store
 .classpath
 .pydevproject
