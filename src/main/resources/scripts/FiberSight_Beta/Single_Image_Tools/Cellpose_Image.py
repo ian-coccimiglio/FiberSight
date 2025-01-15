@@ -49,7 +49,7 @@ def main():
 	
 	start = time.time()
 	
-	runCellpose(image_to_segment, model_type="", model_path = model_path, env_type = "conda", diameter=cellposeDiam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
+	runCellpose(image_to_segment, model_path = model_path, env_type = "conda", diameter=cellposeDiam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
 
 	finish = time.time()
 	time_in_seconds = finish-start

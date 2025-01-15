@@ -11,7 +11,6 @@ raw_files = batch_open_images(my_dir.getPath())
 
 for raw_file in raw_files:
 	namer = FileNamer(raw_file)
-	border_dir = os.path.dirname(namer.border_path)
 	IJ.run("Close All")
 	closeAll()
 	IJ.run("Draw Border", "raw_path='{}'".format(raw_file))

@@ -8,22 +8,17 @@ from analysis_setup import FileNamer
 import os
 
 class ManualRoiEditor:
-	def __init__(self, analysis_type, image_path=None, roi_path=None):
+	def __init__(self, analysis_type, image_path, roi_path=None):
 		Prefs.showAllSliceOnly = False; # Prevents ROIs from being interpreted per-slice
 		IJ.setTool("polygon")
 		self.namer = FileNamer(image_path)
-		if image_path is not None:
-			self.imp = read_image(image_path)
-		else:
-			self.imp = IJ.getImage()
+		self.imp = read_image(image_path)
 		self.rm = RoiManager().getRoiManager()
-		if roi_path is not None:
-			self.roi_path = roi_path
-		else:
-			self.roi_path_out = self.namer.get_path(analysis_type)
+		self.original_roi_path = self.namer.get_path(analysis_type) if not roi_path else roi_path
+
 		self.imp.show()
 		
-	def draw_roi(self, save_in_place=True):
+	def draw_roi(self):
 		IJ.log("Drawing ROI for: {}".format(self.imp.title))
 		self.rm.runCommand(self.imp, "Remove Channel Info") # Fixes ROI deselction problem when switching channels
 		self.rm.deselect()
@@ -32,39 +27,44 @@ class ManualRoiEditor:
 		
 		if self.rm.getCount() == 0:
 			roi = self.imp.getRoi()
-			self.rm.addRoi(roi)
+			if roi is not None:
+				self.rm.addRoi(roi)
 		
-		if save_in_place:
-			self.save_rois_in_place()
-		else:
-			self.save_rois()
+		self._save_rois(self.original_roi_path)
 		self.clean_up()
 	
-	def edit_roi(self, save_in_place=True):
-		if os.path.exists(self.roi_path):
-			IJ.log("ROI File already exists {}, edit ROI if desired".format(self.imp.title))
-			self.rm.open(self.roi_path)
+	def edit_roi(self, new_save_location=False):
+		"""Edit existing ROIs and save to original or new location.
+		
+		Args:
+		    new_save_location: False to save in place, or string path for new save location
+		"""
+		if self.original_roi_path and os.path.exists(self.original_roi_path):
+			IJ.log("Loading existing ROIs from {}".format(self.original_roi_path))
+			self.rm.open(self.original_roi_path)
 			self.rm.runCommand("Show All with Labels")
 			self.rm.select(0)
-		self.rm = self.draw_roi(save_in_place)
-
-	def save_rois_in_place(self):		
-		if not os.path.exists(self.roi_path):
-			roi_dir_name = os.path.dirname(self.roi_path)
-			if not os.path.exists(roi_dir_name):
-					IJ.log("### Making directory: {} ###".format(roi_dir_name))
-					os.mkdir(roi_dir_name, int('755',8))
-			IJ.log("### Saving ROI to {} ###".format(self.roi_path_out))
-			self.rm.save(self.roi_path)
-
-	def save_rois(self):
-		if not os.path.exists(roi_dir_name):
-			IJ.log("### Making directory: {} ###".format(roi_dir_name))
-			os.mkdir(roi_dir_name, int('755',8))
-
-		roi_dir_name = os.path.dirname(self.roi_path_out)
-		IJ.log("### Saving ROI to {} ###".format(self.roi_path_out))
-		self.rm.save(self.roi_path_out)
+			roiWait = WaitForUserDialog("Edit ROIs", "Edit ROIs as needed, then hit OK")
+			roiWait.show()
+			save_path = new_save_location if new_save_location else self.original_roi_path
+			self._save_rois(save_path)
+		else:
+			IJ.log("No existing ROIs found. Drawing new ROIs instead.")
+			self.draw_roi()
+		self.clean_up()
+		
+	def _save_rois(self, save_path):
+		"""Internal method to handle ROI saving logic."""
+		if self.rm.getCount() == 0:
+			IJ.log("No ROIs to save!")
+			return
+		
+		roi_dir = os.path.dirname(save_path)
+		if not os.path.exists(roi_dir):
+			IJ.log("### Making directory: {} ###".format(roi_dir))
+			os.mkdir(roi_dir, int('755', 8))
+		IJ.log("### Saving ROIs to {} ###".format(save_path))
+		self.rm.save(save_path)
 	
 	def clean_up(self):
 		self.imp.hide()
@@ -73,6 +73,5 @@ class ManualRoiEditor:
 if __name__ == "__main__":
 	from jy_tools import attrs, reload_modules, closeAll
 	reload_modules()
-	roi_editor = ManualRoiEditor("border_roi", image_path=raw_path.path)
-	roi_editor.edit_roi(save=False)
-
+	roi_editor = ManualRoiEditor("border_roi", raw_path.path)
+	roi_editor.edit_roi()
