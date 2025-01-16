@@ -140,6 +140,9 @@ def make_results(results_dict, Morph=False, CN=False, FT=False):
 		if results_dict.get("Type IIx_%-Area") is not None:
 			rt.setValues("Type IIx_%-Area", results_dict["Type IIx_%-Area"])
 
+		if results_dict.get("Type IIb_%-Area") is not None:
+			rt.setValues("Type IIb_%-Area", results_dict["Type IIb_%-Area"])
+
 		for enum, ft_label in enumerate(results_dict["Fiber_Type"]):
 			ft_column = rt.getFreeColumn("Label")
 			rt.setValue("Fiber_Type", enum, ft_label)
