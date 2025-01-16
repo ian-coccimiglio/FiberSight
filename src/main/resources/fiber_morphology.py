@@ -1,6 +1,11 @@
+from ij import IJ
+from ij.measure import ResultsTable
+from image_tools import getCentroidPositions
+from jy_tools import test_Results
+
 def estimate_fiber_morphology(fiber_border, scale, rm_fiber):
 	# fiber_border.show()
-	IJ.run(fiber_border, "Set Scale...", "distance={} known=1 unit=micron".format(scale))
+	IJ.run(fiber_border, "Set Scale...", "distance=1 known={} unit=micron".format(scale))
 	IJ.run("Set Measurements...", "area feret's centroid display redirect=None decimal=3")
 	rt = ResultsTable().getResultsTable()
 	rm_fiber.runCommand(fiber_border, "Measure")

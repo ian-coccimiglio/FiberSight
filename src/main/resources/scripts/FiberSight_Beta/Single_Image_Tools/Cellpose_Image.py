@@ -1,6 +1,6 @@
 #@ File(label='Select a raw image', description="<html>Image should ideally be in TIF format</html>", style='file') raw_path
-#@ Integer (label="Segmentation Channel", description="<html>Set 0 to use gray-scale, otherwise channels are indexed from 1</html>", min=0, max=10, value=0) segChan
-#@ Integer (label="Object Diameter",  description="<html>Set 0 to use Cellpose auto-detection (available only on cyto3 model) </html>", min=0, max=200, value=0) cellposeDiam
+#@ Integer (label="Segmentation Channel", description="<html>Set 0 to use gray-scale, otherwise channels are indexed from 1</html>", min=0, max=10, value=0) seg_chan
+#@ Integer (label="Object Diameter",  description="<html>Set 0 to use Cellpose auto-detection (available only on cyto3 model) </html>", min=0, max=200, value=0) cellpose_diam
 #@ String (choices={"cyto3", "PSR_9", "WGA_21", "HE_30"}, description="The type of model to use", value="cyto3", style="radioButtonHorizontal") model
 #@ Boolean (label="Autosave ROIs to standard location?", description="Standard location is in a folder one level above the image folder", value=True) save_rois
 
@@ -15,7 +15,7 @@ from ij.plugin import ChannelSplitter
 from jy_tools import reload_modules
 from image_tools import runCellpose, detectMultiChannel, convertLabelsToROIs, read_image
 from utilities import get_model_path, download_model
-from analysis_setup import FileNamer
+from file_naming import FileNamer
 
 def main():
 	namer = FileNamer(raw_path.path)
@@ -31,17 +31,17 @@ def main():
 	original_imp.show()
 	
 	if detectMultiChannel(original_imp):
-		if segChan == 0:
+		if seg_chan == 0:
 			IJ.log("Processing image in gray-scale")
 			pass # Keep image in gray-scale
-		elif segChan > original_imp.NChannels:
-			IJ.error("Selected segmentation channel ({}) exceeds total number of channels ({}), segmenting on gray-scale instead".format(segChan, original_imp.NChannels))
+		elif seg_chan > original_imp.NChannels:
+			IJ.error("Selected segmentation channel ({}) exceeds total number of channels ({}), segmenting on gray-scale instead".format(seg_chan, original_imp.NChannels))
 			pass
 		else:
 			IJ.log("Multiple channels detected; splitting image")
-			IJ.log("Extracting and segmenting channel {}".format(segChan))
-			channels = ChannelSplitter.split(original_imp)			
-			channels[segChan-1].show() # Selects the channel to segment, offset by 1 for indexing
+			IJ.log("Extracting and segmenting channel {}".format(seg_chan))
+			channels = ChannelSplitter.split(original_imp)
+			channels[seg_chan-1].show() # Selects the channel to segment, offset by 1 for indexing
 			original_imp.hide()
 	
 	image_to_segment = IJ.getImage()
@@ -49,7 +49,7 @@ def main():
 	
 	start = time.time()
 	
-	runCellpose(image_to_segment, model_path = model_path, env_type = "conda", diameter=cellposeDiam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
+	runCellpose(image_to_segment, model_path = model_path, env_type = "conda", diameter=cellpose_diam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
 
 	finish = time.time()
 	time_in_seconds = finish-start

@@ -14,7 +14,8 @@ from utilities import get_drawn_border_roi, generate_required_directories
 from image_tools import detectMultiChannel, pickImage, remove_small_rois, getCentroidPositions, make_results
 from muscle_fiber_typing import generate_ft_results, fiber_type_channel
 from fiber_morphology import estimate_fiber_morphology
-from analysis_setup import FileNamer, AnalysisSetup
+from file_naming import FileNamer
+from analysis_setup import AnalysisSetup
 from collections import OrderedDict, Counter
 import sys, os
 reload_modules()

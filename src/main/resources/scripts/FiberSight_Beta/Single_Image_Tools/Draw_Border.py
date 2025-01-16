@@ -12,7 +12,7 @@ from ij import IJ
 import os, sys
 from jy_tools import closeAll, list_files, reload_modules
 from roi_editor import ManualRoiEditor
-from analysis_setup import FileNamer
+from file_naming import FileNamer
 reload_modules()
 namer = FileNamer(raw_path.path)
 roi_directory = "border_roi"

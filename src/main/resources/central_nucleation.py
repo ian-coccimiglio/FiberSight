@@ -17,10 +17,31 @@ from jy_tools import closeAll, attrs
 from ij.gui import Overlay, Roi
 from math import sqrt, pi
 from java.awt import Color
+from collections import OrderedDict, Counter
 
-def determine_central_nucleation(dapi_channel, rm_fiber, single_erosion=True):
-	pass
-	
+def find_all_nuclei(dapi_channel, rm_fiber):
+	imp_temp = dapi_channel.duplicate()
+	imp_temp.title = "{} Temp".format(dapi_channel.title)
+	Prefs.blackBackground = True
+	IJ.setAutoThreshold(imp_temp, "Otsu dark")
+	IJ.run(imp_temp, "Convert to Mask", "")
+	IJ.run(imp_temp, "Watershed", "")
+	IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
+	rm_fiber.close()
+	PA_settings = "size=1.0--Infinity circularity=0-1.00 add"
+	roiArray, rm_nuclei = analyze_particles_get_roi_array(imp_temp, PA_settings)
+	return roiArray, rm_nuclei
+
+def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8):
+	nFibers = rm_fiber.getCount()
+	xFib, yFib = getCentroidPositions(rm_fiber)
+	xNuc, yNuc = getCentroidPositions(rm_nuclei)
+	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
+	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
+	all_reduced = []
+	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, draw=None)
+	return count_central, count_nuclei, rm_central
+
 def determine_number_peripheral(count_central, count_nuclei):
 	peripheral_dict = {}
 	for item in count_central:
@@ -33,7 +54,7 @@ def analyze_particles_get_roi_array(imp, settings):
 	IJ.run(imp,"Analyze Particles...", settings)
 	roiArray = newRM.getRoisAsArray()
 	newRM.close()
-	return roiArray
+	return roiArray, newRM
 
 def show_rois(imp, roi_array):
 	overlay = Overlay()
@@ -41,7 +62,7 @@ def show_rois(imp, roi_array):
 		overlay.add(roi)
 	imp.draw()
 
-def single_erosion(rm_fiber, percent, all_reduced):
+def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, draw=None):
 	RM_central = RoiManager()
 	rm_central = RM_central.getRoiManager()
 	relative_reduced_area = []
@@ -66,7 +87,7 @@ def single_erosion(rm_fiber, percent, all_reduced):
 	count_central = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, draw=None, xFib=xFib, yFib=yFib)
 	return count_central, relative_reduced_area, rm_central
 
-def repeated_erosion(percReductions, rm_fiber):
+def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers):
 	num_central = []
 	all_reduced = []
 	
@@ -79,7 +100,7 @@ def repeated_erosion(percReductions, rm_fiber):
 			rm_central.runCommand("Deselect")
 			rm_central.runCommand("Delete")
 		
-		count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, percent, all_reduced)
+		count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers)
 		
 		num_central.append(sum([count_central[count] > 0 for count in count_central]))	
 	
@@ -103,10 +124,6 @@ def fill_color_rois(central_fibers, percReductions, rm_fiber):
 	
 	for non_peripheral in set(range(rm_fiber.getCount()))-set(central_fibers[0.0]):
 		roiRecolor(rm_fiber.getRoi(non_peripheral), Color.BLACK)
-	
-class centralityDetection():
-	
-
 
 if __name__ == "__main__":
 	main_dir = "/home/ian/data/test_Experiments/Experiment_4_Central_Nuc/"
@@ -137,7 +154,7 @@ if __name__ == "__main__":
 	rm_fiber.close()
 	PA_settings = "size=1.0--Infinity circularity=0-1.00 add"
 	
-	# rois = analyze_particles_get_roi_array(imp_temp, PA_settings)
+	rois, newRM = analyze_particles_get_roi_array(imp_temp, PA_settings)
 	
 	rm_nuclei = RoiManager(False)
 	PA.setRoiManager(rm_nuclei)
@@ -150,10 +167,9 @@ if __name__ == "__main__":
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	
 	percReductions = [float(a)/10 for a in range(0, 10, 1)]
-	num_central, all_reduced, central_fibers, rm_fiber = repeated_erosion(percReductions, rm_fiber)
+	num_central, all_reduced, central_fibers, rm_fiber = repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, rm_central, xNuc, yNuc, xFib, yFib, draw=None)
 	
 	rm_fiber.close()
-	#rm_central.close()
 	# rm_central.close()
 	rm_fiber = RoiManager()
 	rm_fiber.open(roi_path)
