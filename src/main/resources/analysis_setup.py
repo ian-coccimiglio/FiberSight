@@ -40,7 +40,7 @@ class AnalysisSetup:
 		if not all(ch in self.CHANNEL_NAMES for ch in channel_list):
 			invalid_channels = [ch for ch in channel_list if ch not in self.CHANNEL_NAMES]
 			raise ValueError("Invalid channel names: {}".format(invalid_channels))
-		self.fiber_border_title = self.FIBER_BORDER_TITLE
+
 		self.namer = FileNamer(raw_image_path)
 		self.all_channels = [None if ch == 'None' else ch for ch in channel_list]
 		self.rm_fiber = self.get_fiber_rois(fiber_roi_path)
@@ -161,7 +161,7 @@ class AnalysisSetup:
 		return channelMap
 		 
 	def get_manual_border(self):
-		return get_drawn_border_roi(self.namer.get_path("border_roi"))
+		return get_drawn_border_roi(self.namer.border_path)
 		
 	def __str__(self):
 		"""

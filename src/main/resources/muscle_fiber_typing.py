@@ -186,14 +186,14 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False
 	
 	return(ft)
 	
-def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radius=2, image_correction=None, border_clear=False):
+def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radius=2, image_correction=None, drawn_border_roi=None):
 	IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
 	IJ.log("### Processing channel {} ###".format(channel.title))
 	channel_dup = channel.duplicate()
 	
 	# IJ.selectWindow(channel.title)
 	rm_fiber.runCommand("Show All")
-	if border_clear:
+	if drawn_border_roi is not None:
 		channel_dup.setRoi(drawn_border_roi)
 		IJ.run(channel_dup, "Clear Outside", "")
 		

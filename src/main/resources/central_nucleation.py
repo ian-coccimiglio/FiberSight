@@ -40,6 +40,7 @@ def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8):
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	all_reduced = []
 	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, draw=None)
+	print relative_reduced_area
 	return count_central, count_nuclei, rm_central
 
 def determine_number_peripheral(count_central, count_nuclei):
@@ -49,7 +50,7 @@ def determine_number_peripheral(count_central, count_nuclei):
 	return Counter(peripheral_dict)
 
 def analyze_particles_get_roi_array(imp, settings):
-	newRM = RoiManager(False)
+	newRM = RoiManager()
 	PA.setRoiManager(newRM)
 	IJ.run(imp,"Analyze Particles...", settings)
 	roiArray = newRM.getRoisAsArray()
