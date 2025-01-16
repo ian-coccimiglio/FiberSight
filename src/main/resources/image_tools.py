@@ -17,105 +17,105 @@ from CZIstackchoice import CZIopener
 from utilities import download_model
 
 def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
-    '''Open all files in the given folder.
-    :param path: The path from where to open the images. String and java.io.File are allowed.
-    :param file_type: Only accept files with the given extension (default: None).
-    :param name_filter: Only accept files that contain the given string (default: None).
-    :param recursive: Process directories recursively (default: False).
-    '''
-    # Converting a File object to a string.
-    if isinstance(path, File):
-        path = path.getAbsolutePath()
+	'''Open all files in the given folder.
+	:param path: The path from where to open the images. String and java.io.File are allowed.
+	:param file_type: Only accept files with the given extension (default: None).
+	:param name_filter: Only accept files that contain the given string (default: None).
+	:param recursive: Process directories recursively (default: False).
+	'''
+	# Converting a File object to a string.
+	if isinstance(path, File):
+		path = path.getAbsolutePath()
  
-    def check_type(string):
-        '''This function is used to check the file type.
-        It is possible to use a single string or a list/tuple of strings as filter.
-        This function can access the variables of the surrounding function.
-        :param string: The filename to perform the check on.
-        '''
-        if file_type:
-            # The first branch is used if file_type is a list or a tuple.
-            if isinstance(file_type, (list, tuple)):
-                for file_type_ in file_type:
-                    if string.endswith(file_type_):
-                        # Exit the function with True.
-                        return True
-                    else:
-                        # Next iteration of the for loop.
-                        continue
-            # The second branch is used if file_type is a string.
-            elif isinstance(file_type, string):
-                if string.endswith(file_type):
-                    return True
-                else:
-                    return False
-            return False
-        # Accept all files if file_type is None.
-        else:
-            return True
+	def check_type(string):
+		'''This function is used to check the file type.
+		It is possible to use a single string or a list/tuple of strings as filter.
+		This function can access the variables of the surrounding function.
+		:param string: The filename to perform the check on.
+		'''
+		if file_type:
+			# The first branch is used if file_type is a list or a tuple.
+			if isinstance(file_type, (list, tuple)):
+				for file_type_ in file_type:
+					if string.endswith(file_type_):
+						# Exit the function with True.
+						return True
+					else:
+						# Next iteration of the for loop.
+						continue
+			# The second branch is used if file_type is a string.
+			elif isinstance(file_type, string):
+				if string.endswith(file_type):
+					return True
+				else:
+					return False
+			return False
+		# Accept all files if file_type is None.
+		else:
+			return True
  
-    def check_filter(string):
-        '''This function is used to check for a given filter.
-        It is possible to use a single string or a list/tuple of strings as filter.
-        This function can access the variables of the surrounding function.
-        :param string: The filename to perform the filtering on.
-        '''
-        if name_filter:
-            # The first branch is used if name_filter is a list or a tuple.
-            if isinstance(name_filter, (list, tuple)):
-                for name_filter_ in name_filter:
-                    if name_filter_ in string:
-                        # Exit the function with True.
-                        return True
-                    else:
-                        # Next iteration of the for loop.
-                        continue
-            # The second branch is used if name_filter is a string.
-            elif isinstance(name_filter, string):
-                if name_filter in string:
-                    return True
-                else:
-                    return False
-            return False
-        else:
-        # Accept all files if name_filter is None.
-            return True
+	def check_filter(string):
+		'''This function is used to check for a given filter.
+		It is possible to use a single string or a list/tuple of strings as filter.
+		This function can access the variables of the surrounding function.
+		:param string: The filename to perform the filtering on.
+		'''
+		if name_filter:
+			# The first branch is used if name_filter is a list or a tuple.
+			if isinstance(name_filter, (list, tuple)):
+				for name_filter_ in name_filter:
+					if name_filter_ in string:
+						# Exit the function with True.
+						return True
+					else:
+						# Next iteration of the for loop.
+						continue
+			# The second branch is used if name_filter is a string.
+			elif isinstance(name_filter, string):
+				if name_filter in string:
+					return True
+				else:
+					return False
+			return False
+		else:
+		# Accept all files if name_filter is None.
+			return True
  
-    # We collect all files to open in a list.
-    path_to_images = []
-    # Replacing some abbreviations (e.g. $HOME on Linux).
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
-    # If we don't want a recursive search, we can use os.listdir().
-    if not recursive:
-        for file_name in os.listdir(path):
-            full_path = os.path.join(path, file_name)
-            if os.path.isfile(full_path):
-                if check_type(file_name):
-                    if check_filter(file_name):
-                        path_to_images.append(full_path)
-    # For a recursive search os.walk() is used.
-    else:
-        # os.walk() is iterable.
-        # Each iteration of the for loop processes a different directory.
-        # the first return value represents the current directory.
-        # The second return value is a list of included directories.
-        # The third return value is a list of included files.
-        for directory, dir_names, file_names in os.walk(path):
-            # We are only interested in files.
-            for file_name in file_names:
-                # The list contains only the file names.
-                # The full path needs to be reconstructed.
-                full_path = os.path.join(directory, file_name)
-                # Both checks are performed to filter the files.
-                if check_type(file_name):
-                    if check_filter(file_name):
-                        # Add the file to the list of images to open.
-                        path_to_images.append(full_path)
+	# We collect all files to open in a list.
+	path_to_images = []
+	# Replacing some abbreviations (e.g. $HOME on Linux).
+	path = os.path.expanduser(path)
+	path = os.path.expandvars(path)
+	# If we don't want a recursive search, we can use os.listdir().
+	if not recursive:
+		for file_name in os.listdir(path):
+			full_path = os.path.join(path, file_name)
+			if os.path.isfile(full_path):
+				if check_type(file_name):
+					if check_filter(file_name):
+						path_to_images.append(full_path)
+	# For a recursive search os.walk() is used.
+	else:
+		# os.walk() is iterable.
+		# Each iteration of the for loop processes a different directory.
+		# the first return value represents the current directory.
+		# The second return value is a list of included directories.
+		# The third return value is a list of included files.
+		for directory, dir_names, file_names in os.walk(path):
+			# We are only interested in files.
+			for file_name in file_names:
+				# The list contains only the file names.
+				# The full path needs to be reconstructed.
+				full_path = os.path.join(directory, file_name)
+				# Both checks are performed to filter the files.
+				if check_type(file_name):
+					if check_filter(file_name):
+						# Add the file to the list of images to open.
+						path_to_images.append(full_path)
 
-    return path_to_images
+	return path_to_images
 
-def make_results(results_dict, Morph=False, FT=False, CN=False):
+def make_results(results_dict, Morph=False, CN=False, FT=False):
 	""" Takes an Dictionary, and adds to ResultsTable in that order """
 	IJ.run("Clear Results")
 	rt = ResultsTable.getResultsTable()
@@ -155,13 +155,13 @@ def make_results(results_dict, Morph=False, FT=False, CN=False):
 	return(rt)
 
 def split_string(input_string):
-    '''Split a string to a list and strip it
-    :param input_string: A string that contains semicolons as separators.
-    '''
-    string_splitted = input_string.split(';')
-    # Remove whitespace at the beginning and end of each string
-    strings_striped = [string.strip() for string in string_splitted]
-    return strings_striped
+	'''Split a string to a list and strip it
+	:param input_string: A string that contains semicolons as separators.
+	'''
+	string_splitted = input_string.split(';')
+	# Remove whitespace at the beginning and end of each string
+	strings_striped = [string.strip() for string in string_splitted]
+	return strings_striped
 
 #def loadMicroscopeImage(image_path):
 #	''' Loads a microscope image '''
@@ -298,8 +298,10 @@ def runCellpose(image,
 		try:
 			if not model_path:
 				model="cyto3"
-			if os.path.exists(model_path):
+			if os.path.exists(model_path) and os.path.basename(model_path) != "cyto3":
 				model=""
+			elif os.path.basename(model_path) == "cyto3":
+				model="cyto3"
 			else:
 				model_path = download_model(os.path.basename(model_path))
 				if not model_path:
@@ -631,19 +633,19 @@ def remove_small_rois(rm, imp, minimum_area=1500):
 	return rm_filtered
 
 #class CustomKeyListener(KeyListener):
-#    def __init__(self, rm, imp):
-#    	self.rm = rm
-#    	self.imp = imp
-#    	
-#    def keyPressed(self, event):
-#	    if (str(event.getKeyChar())) == "t":
-#        	self.rm.runCommand(self.imp,"Remove Channel Info");
+#	def __init__(self, rm, imp):
+#		self.rm = rm
+#		self.imp = imp
+#		
+#	def keyPressed(self, event):
+#		if (str(event.getKeyChar())) == "t":
+#			self.rm.runCommand(self.imp,"Remove Channel Info");
 #
-#    def keyReleased(self, event):
-#        pass
+#	def keyReleased(self, event):
+#		pass
 #
-#    def keyTyped(self, event):
-#        pass
+#	def keyTyped(self, event):
+#		pass
 
 
 

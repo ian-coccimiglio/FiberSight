@@ -4,7 +4,8 @@ import unittest
 import sys, os
 import inspect
 from ij import IJ, WindowManager as WM
-from analysis_setup import FileNamer, AnalysisSetup  # adjust imports as needed
+from file_naming import FileNamer
+from analysis_setup import AnalysisSetup  # adjust imports as needed
 from jy_tools import reload_modules, closeAll, test_Results, match_files
 from image_tools import runCellpose, read_image
 from utilities import download_model, get_model_path
@@ -44,7 +45,7 @@ class TestAnalysisSetup(unittest.TestCase):
 		experiment_dir = os.path.join(test_directory, "test_experiment_brightfield/")
 		image_dir = os.path.join(experiment_dir, "raw/")
 		self.image_path = os.path.join(image_dir, "V52_patch_1.tif")
-		self.setup = AnalysisSetup(self.image_path, ["Border", "None", "None", "None"])
+		self.setup = AnalysisSetup(self.image_path, ["Fiber Border", "None", "None", "None"])
 	
 	def test_analysis_prerequisites(self):
 		# Test ROI existence checking
@@ -67,7 +68,7 @@ class TestCellpose(unittest.TestCase):
 		image_dir = os.path.join(experiment_dir, "raw/")
 		self.image_path = os.path.join(image_dir, "V52_patch_1.tif")
 
-		self.setup = AnalysisSetup(self.image_path, ["Border", "None", "None", "None"])
+		self.setup = AnalysisSetup(self.image_path, ["Fiber Border", "None", "None", "None"])
 		self.setup.imp.show()
 		IJ.redirectErrorMessages()
 	
@@ -124,7 +125,7 @@ class TestCellposeFluorescence(unittest.TestCase):
 		image_dir = os.path.join(experiment_dir, "raw/")
 		self.image_path = os.path.join(image_dir, "skm_hs_cw.tif")
 
-		self.setup = AnalysisSetup(self.image_path, ["None", "None", "None", "Border"])
+		self.setup = AnalysisSetup(self.image_path, ["None", "None", "None", "Fiber Border"])
 		self.setup.imp.show()
 		IJ.redirectErrorMessages()
 	

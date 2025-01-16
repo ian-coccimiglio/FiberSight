@@ -4,7 +4,7 @@ from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from ij.gui import WaitForUserDialog
 from image_tools import read_image
-from analysis_setup import FileNamer
+from file_naming import FileNamer
 import os
 
 class ManualRoiEditor:
@@ -67,7 +67,7 @@ class ManualRoiEditor:
 		self.rm.save(save_path)
 	
 	def clean_up(self):
-		self.imp.hide()
+		self.imp.close()
 		self.rm.close()
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from ij import IJ
 import os, sys
 from jy_tools import closeAll
 from roi_editor import ManualRoiEditor
-from analysis_setup import FileNamer
+from file_naming import FileNamer
 from image_tools import editRoi
 
 IJ.log("Current Sample is: {}".format(raw_image.getName()))
