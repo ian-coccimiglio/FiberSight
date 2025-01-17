@@ -16,6 +16,10 @@ from collections import Counter, OrderedDict
 reload_modules()
 
 def isBrightfield(channels):
+	"""
+	Checks if an image is Brightfield based on if the first channel is labelled as 'Fiber Borders',
+	and the subsequent channels are labelled as 'None'.
+	"""
 	return channels[0] == "Fiber Border" and all([channel == "None" for channel in channels[1:4]])
 
 def get_fiber_border_channel(channels):
@@ -27,14 +31,20 @@ def get_fiber_border_channel(channels):
 			return enum+1
 
 def create_roi_manager_from_ROIs(roiArray, imp=None):
+	"""
+	Creates an ROI manager from an array of ROIs. This function helps with performing tasks that require juggling ROI managers.
+	"""
 	rm = RoiManager().getRoiManager()
 	for enum, roi in enumerate(roiArray):
 		rm.add(imp, roi, enum)
 	return rm
 
 def save_results(results):
+	"""
+	Creates a directory in standard location, then saves the results to it.
+	"""
 	analysis.namer.create_directory("results")
-	IJ.saveAs("Results", analysis.namer.results_path)
+	IJ.saveAs("Results", analysis.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
