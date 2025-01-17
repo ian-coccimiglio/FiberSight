@@ -32,6 +32,10 @@ def create_roi_manager_from_ROIs(roiArray, imp=None):
 		rm.add(imp, roi, enum)
 	return rm
 
+def save_results(results):
+	analysis.namer.create_directory("results")
+	IJ.saveAs("Results", analysis.namer.results_path)
+
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
@@ -110,9 +114,12 @@ if __name__ in ['__builtin__','__main__']:
 		threshold_method = fs.get_threshold_method()
 		
 		area_frac = OrderedDict()
+		analysis.namer.create_directory("masks")
 		for channel in analysis.ft_channels:
 			area_frac["{}_%-Area".format(channel.getTitle())], channel_dup = fiber_type_channel(channel, analysis.rm_fiber, blur_radius=4, threshold_method=threshold_method, image_correction=image_correction, drawn_border_roi=analysis.drawn_border_roi)
 			channel_dup.show()
+			ft_mask_path = os.path.join(analysis.namer.masks_dir, analysis.namer.base_name)
+			IJ.saveAs(channel_dup, "Png", "{}_{}_{}".format(ft_mask_path,channel_dup.title,threshold_method,image_correction))
 	
 		IJ.log("### Identifying Positive Fraction Fiber Type ###")
 		for key in area_frac.keys():
@@ -140,12 +147,11 @@ if __name__ in ['__builtin__','__main__']:
 			IJ.run(channel_dup, "Clear Outside", "")
 			
 		IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
-		ft_mask_path = os.path.join(analysis.namer.masks_dir, analysis.namer.base_name)
-		IJ.saveAs(channel_dup, "Png", "{}_{}_{}".format(ft_mask_path,channel_dup.title,threshold_method,image_correction))
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	# Save results
-	# save_results()
+	save_results(results)
+	
 	# save_figures()
 
 # fs = FiberSight()
