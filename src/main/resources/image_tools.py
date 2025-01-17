@@ -205,6 +205,12 @@ def make_results(results_dict, Morph=False, CN=False, FT=False):
 		IJ.log("Recording Morphologies")
 		rt.setValues("Area", results_dict["Area"])
 		rt.setValues("MinFeret", results_dict["MinFeret"])
+		
+	if CN:
+		IJ.log("Recording Nucleation")
+		rt.setValues("Central Nuclei", results_dict["Central Nuclei"])
+		rt.setValues("Peripheral Nuclei", results_dict["Peripheral Nuclei"])
+		rt.setValues("Total Nuclei", results_dict["Total Nuclei"])
 	
 	if FT:
 		IJ.log("Recording Fiber Types")
@@ -223,12 +229,6 @@ def make_results(results_dict, Morph=False, CN=False, FT=False):
 		for enum, ft_label in enumerate(results_dict["Fiber_Type"]):
 			ft_column = rt.getFreeColumn("Label")
 			rt.setValue("Fiber_Type", enum, ft_label)
-	
-	if CN:
-		IJ.log("Recording Nucleation")
-		rt.setValues("Central Nuclei", results_dict["Central Nuclei"])
-		rt.setValues("Peripheral Nuclei", results_dict["Peripheral Nuclei"])
-		rt.setValues("Total Nuclei", results_dict["Total Nuclei"])
 
 	rt.updateResults()
 	rt.show("Results")

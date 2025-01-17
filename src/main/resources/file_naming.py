@@ -9,6 +9,7 @@ class FileNamer:
 		"masks": "_masks.png",
 		"border_exclusion": "_fibers_RoiSet.zip",
 		"manual_rois": "_fibers_RoiSet.zip",
+		"figures": "_figure.jpeg"
 		# more can be added as necessary
 	}
 	
@@ -18,7 +19,9 @@ class FileNamer:
 		"fiber_rois": "cellpose_rois",
 		"combined_rois": "combined_rois",
 		"manual_rois": "manually_edited_rois",
-		"border_exclusion": "border_excluded_rois"
+		"border_exclusion": "border_excluded_rois",
+		"masks": "fiber_type_masks",
+		"figures": "figures"
 		# more can be added as necessary
 	}
 	
@@ -34,11 +37,15 @@ class FileNamer:
 		self.image_dir = os.path.dirname(image_path)
 		self.experiment_dir = os.path.dirname(self.image_dir)
 		self.border_exclusion_dir = self.get_directory("border_exclusion")
+		self.masks_dir = self.get_directory("masks")
+		self.figures_dir = self.get_directory("figures")
 		self.base_name = self.remove_extension()
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
 		self.manual_rois_path = self.get_path("manual_rois")
+		self.figures_path = self.get_path("figures")
+		self.masks_path = self.get_path("masks")
 		self.excluded_border_fiber_rois_path = self.get_path("border_exclusion")
 	
 	def create_directory(self, directory):
