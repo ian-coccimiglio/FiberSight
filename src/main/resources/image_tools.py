@@ -5,7 +5,7 @@ from ij.plugin import RGBStackMerge
 from ij.plugin.frame import RoiManager
 from ij.gui import GenericDialog, WaitForUserDialog, Overlay, Line
 import os, sys
-from math import sqrt
+from math import sqrt, ceil
 from collections import Counter, OrderedDict
 from java.awt import Color
 from java.awt.event import KeyListener, ActionListener
@@ -13,8 +13,85 @@ from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, windowFi
 from jy_tools import dirMake, saveFigure, pd, listProperties, resTable, userWait
 from javax.swing import JToggleButton
 from java.io import File
-from CZIstackchoice import CZIopener
 from utilities import download_model
+from loci.formats import ChannelSeparator
+
+class CZIopener:
+	def __init__(self, file_path):
+		self.file_path = file_path
+		self.cs = self.getChannelSep()
+		self.numSeries = self.cs.getSeriesCount()
+		self.series_names = self.createSeriesNames()
+		self.magnifications = self.getMagnifications()
+		self.filesize = os.path.getsize(self.file_path)
+		self.megabytes = self.getSeriesSizes()
+		
+	def openSlice(self, pos=None):
+		'''Opens a specific slice set by pos. Otherwise, it opens the first slice.'''
+		self.openSeries(pos)
+		self.X, self.Y, _ = self.getSeriesDimensions(pos)
+		self.magnify = self.magnifications[self.series_names[pos]]
+		self.slice_mag = self.magnifications[self.series_names[pos]]
+		self.orig_dimensions = (self.magnify*self.X, self.magnify*self.Y)
+		assert (self.magnifications[self.series_names[0]] == 1)
+		print 'Current Series Dimensions = {}px, {}px'.format(self.X, self.Y)
+		print 'Image Magnification = {}'.format(self.slice_mag)
+		print 'Full Image Dimensions = {}px, {}py'.format(self.orig_dimensions[0], self.orig_dimensions[1]) 
+		
+	def createSeriesNames(self):
+		return ['series_'+str(r) for r in range(1,self.numSeries+1)]
+		
+	def getSeriesSizes(self):
+		'''Takes in a series and returns the file sizes (MB) associated with each series'''
+		megabyte_dict = {}
+		for enum in range(len(self.series_names)):
+			self.cs.setSeries(enum)
+			currX, currY, currZ = self.getSeriesDimensions(enum)
+			numChannels = self.cs.getSizeC()
+			bitDepth = self.cs.getBitsPerPixel()
+			true_bytes = ceil(float(bitDepth)/float(8))
+			imp_bytes = numChannels*currZ*currX*currY*true_bytes
+			megabyte_dict[self.series_names[enum]] = imp_bytes/1000000	
+		return megabyte_dict
+	
+	def getMagnifications(self):
+		'''Takes in a series and returns the magnifications associated with each series'''
+		magnify_dict = {}
+		for enum in range(len(self.series_names)):
+			if (enum == 0):
+				maxX, maxY, _ = self.getSeriesDimensions(enum)
+			currX, currY, _ = self.getSeriesDimensions(enum)
+			xMag = maxX/currX
+			yMag = maxY/currY
+			if (xMag != yMag):
+				print '[ERROR] magnifications are different in the x and y directions'
+			magnify_dict[self.series_names[enum]] = xMag
+		return magnify_dict
+		
+	def getSeriesDimensions(self, pos):
+		'''Gets the dimensions of the current series'''
+		if (pos==None): 
+			self.cs.setSeries(0)
+		else:
+			self.cs.setSeries(pos)
+		currX = self.cs.getSizeX()
+		currY = self.cs.getSizeY()
+		currZ = self.cs.getSizeZ()
+		return currX, currY, currZ
+		
+	def openSeries(self, pos=None):
+		'''Uses Bioformats Importer to open a slice of a series. Otherwise, this will open a specific series'''
+		if (pos==None):
+			args = "open='{}' autoscale color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT {}".format(self.file_path, self.series_names[0])
+		else:
+			args = "open='{}' autoscale color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT {}".format(self.file_path, self.series_names[pos])
+		IJ.run("Bio-Formats Importer", args)
+
+	def getChannelSep(self):
+		'''Reads a filepath and returns a channel separator'''	
+		cs = ChannelSeparator()
+		cs.setId(self.file_path)
+		return cs
 
 def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
 	'''Open all files in the given folder.
