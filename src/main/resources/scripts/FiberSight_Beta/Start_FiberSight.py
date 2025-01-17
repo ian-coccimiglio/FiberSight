@@ -53,7 +53,7 @@ if __name__ in ['__builtin__','__main__']:
 	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
 	
 	remove_small_fibers = fs.get_remove_small()
-	remove_fibers_outside_border = True if analysis.get_manual_border() is not None else False
+	remove_fibers_outside_border = True if analysis.drawn_border_roi is not None else False
 	results_dict = {}
 	
 	if analysis.rm_fiber is None:
