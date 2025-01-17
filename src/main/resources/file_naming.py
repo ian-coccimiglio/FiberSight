@@ -113,4 +113,8 @@ class FileNamer:
 				"fiber_roi_path: {}\n"
 				"manual_rois_path: {}\n"
 				"excluded_border_fiber_rois_path: {}\n".format(self.image_path, self.image_name, self.base_name, self.image_dir, self.experiment_dir, self.border_exclusion_dir, self.border_path, self.fiber_roi_path, self.manual_rois_path, self.excluded_border_fiber_rois_path))
-				
+
+if __name__ == "__main__":
+	# Usage #
+	namer = FileNamer(raw_path.path)
+	print(namer)

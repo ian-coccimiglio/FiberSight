@@ -47,7 +47,12 @@ class ManualRoiEditor:
 			roiWait = WaitForUserDialog("Edit ROIs", "Edit ROIs as needed, then hit OK")
 			roiWait.show()
 			save_path = new_save_location if new_save_location else self.original_roi_path
+			if self.rm.getCount() == 0:
+				roi = self.imp.getRoi()
+				if roi is not None:
+					self.rm.addRoi(roi)
 			self._save_rois(save_path)
+			
 		else:
 			IJ.log("No existing ROIs found. Drawing new ROIs instead.")
 			self.draw_roi()

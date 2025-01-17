@@ -161,6 +161,11 @@ class AnalysisSetup:
 		return channelMap
 		 
 	def get_manual_border(self):
+		IJ.log("### Getting Manual Border ###")
+		if not os.path.exists(self.namer.border_path):
+			IJ.log("Could not find manual border ROI file at {}".format(self.namer.border_path))
+		else:
+			IJ.log("Using border file at {}".format(self.namer.border_path))
 		return get_drawn_border_roi(self.namer.border_path)
 		
 	def __str__(self):
@@ -176,7 +181,5 @@ class AnalysisSetup:
 
 if __name__ == "__main__":
 	# Usage #
-	namer = FileNamer(raw_path.path)
-	analysis = AnalysisSetup(raw_path.path, ["Border", "None", "None", "None"])
-	print(namer)
+	analysis = AnalysisSetup(raw_path.path, ["Fiber Border", "None", "None", "None"])
 	print(analysis)
