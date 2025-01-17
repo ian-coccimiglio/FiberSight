@@ -87,6 +87,7 @@ if __name__ in ['__builtin__','__main__']:
 		imp_base.hide()
 		rm_test = convertLabelsToROIs(edgeless)
 		edgeless.hide()
+		# TODO: Save these ROIs #
 
 	if analysis.Morph:
 		results_dict["Label"], results_dict["Area"], results_dict["MinFeret"] = estimate_fiber_morphology(analysis.border_channel, analysis.imp_scale, analysis.rm_fiber)
@@ -136,13 +137,15 @@ if __name__ in ['__builtin__','__main__']:
 		if analysis.drawn_border_roi is not None:
 			IJ.log("### Clearing area outside border ###")
 			channel_dup.setRoi(analysis.drawn_border_roi)
-			IJ.run(channel_dup, "Clear Outside", "");
+			IJ.run(channel_dup, "Clear Outside", "")
 			
-#		if save_res:
-#			IJ.log("Saving channel mask: {}".format(channel_dup.title))
-#			ft_mask_path = os.path.join(masks_dir, analysis.namer.base_name)
-#			IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+"Otsu")
+		IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
+		ft_mask_path = os.path.join(analysis.namer.masks_dir, analysis.namer.base_name)
+		IJ.saveAs(channel_dup, "Png", "{}_{}_{}".format(ft_mask_path,channel_dup.title,threshold_method,image_correction))
 
-	make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
+	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
+	# Save results
+	# save_results()
+	# save_figures()
 
 # fs = FiberSight()
