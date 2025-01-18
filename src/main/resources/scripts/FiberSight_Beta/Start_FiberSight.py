@@ -39,12 +39,23 @@ def create_roi_manager_from_ROIs(roiArray, imp=None):
 		rm.add(imp, roi, enum)
 	return rm
 
-def save_results(results):
+def save_results(analysis):
 	"""
 	Creates a directory in standard location, then saves the results to it.
 	"""
 	analysis.namer.create_directory("results")
 	IJ.saveAs("Results", analysis.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
+
+def create_figures(analysis):
+	if analysis.Morph:
+		pass # Morphology image
+
+	if analysis.CN:
+		pass # Central-nucleation composite image
+		# Multiple erosion image with fraction as image label
+		
+	if analysis.FT:
+		pass # Fiber-Type composite image
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
@@ -160,8 +171,7 @@ if __name__ in ['__builtin__','__main__']:
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	# Save results
-	save_results(results)
-	
-	# save_figures()
+	save_results(analysis)
+	create_figures(analysis)
 
 # fs = FiberSight()
