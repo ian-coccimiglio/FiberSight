@@ -3,7 +3,7 @@
 from ij import IJ, ImagePlus, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 from image_tools import read_image
-import os
+import os, sys
 from utilities import get_drawn_border_roi, make_directories
 from java.io import File
 from image_formatting import ImageStandardizer
@@ -127,12 +127,26 @@ class AnalysisSetup:
 		Raises:
 		ValueError: If channel configuration is invalid
 		"""
+		specified_channels = [ch for ch in self.all_channels if ch is not None]
+		max_ch_pos = max((i for i, x in enumerate(self.all_channels) if x is not None))+1 # offset to compare with length
+		num_ch_specified = len(specified_channels)
+		num_ch_image = len(self.imp_channels)
+		if num_ch_specified > num_ch_image:
+			IJ.error("Too many channels specified: {} in specifications, {} in image".format(num_ch_specified, num_ch_image))
+			sys.exit(1)
+		if len(set(specified_channels)) < len(specified_channels):
+			IJ.error("Duplicate channels specified")
+			sys.exit(1)
+		if max_ch_pos > num_ch_image:
+			IJ.error("Channel position too high: channel {} selected, only {} channels in image".format(max_ch_pos, num_ch_image))
+			sys.exit(1)
 		if not any(self.all_channels):
 			IJ.error("At least one channel needs to exist")
 			sys.exit(1)
 		if self.FIBER_BORDER_TITLE not in self.all_channels:
 			IJ.error("At least one channel needs to indicate the fiber border")
 			sys.exit(1)
+		
 	
 	def standardize_image(self):
 		"""
