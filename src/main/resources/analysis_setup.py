@@ -128,7 +128,7 @@ class AnalysisSetup:
 		ValueError: If channel configuration is invalid
 		"""
 		specified_channels = [ch for ch in self.all_channels if ch is not None]
-		max_ch_pos = max((i for i, x in enumerate(self.all_channels) if x is not None))+1 # offset to compare with length
+		max_ch_pos = max([i for i, x in enumerate(self.all_channels) if x is not None] or [0])+1 # offset to compare with length
 		num_ch_specified = len(specified_channels)
 		num_ch_image = len(self.imp_channels)
 		if num_ch_specified > num_ch_image:
