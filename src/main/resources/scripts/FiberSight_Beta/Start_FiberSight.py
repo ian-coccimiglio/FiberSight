@@ -1,4 +1,4 @@
-from ij import IJ, WindowManager as WM
+from ij import IJ, Prefs, WindowManager as WM
 from ij.gui import GenericDialog
 from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
@@ -46,11 +46,48 @@ def save_results(analysis):
 	analysis.namer.create_directory("results")
 	IJ.saveAs("Results", analysis.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
 
+def get_channel_colormap(analysis):
+	composite_list = []
+	cmap = {"Type IIx":"c1", "Type IIa":"c5", "DAPI":"c3", "Fiber Border":"c6", "Type I":"c7"}
+	for channel in analysis.all_channels:
+		if channel is not None:
+			color = cmap[channel]
+			composite_list.append("{}=[{}]".format(color, channel))
+	return composite_list
+
 def create_figures(analysis):
+	analysis.namer.create_directory("figures")
 	if analysis.Morph:
+		morphology_image = analysis.imp.duplicate()
+		for label in range(analysis.rm_fiber.getCount()):
+			analysis.rm_fiber.rename(label, str(label+1))
+		
+		Prefs.useNamesAsLabels = True;
+		analysis.rm_fiber.runCommand(morphology_image, "Show All with Labels")
+		IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
+		analysis.rm_fiber.moveRoisToOverlay(morphology_image)
+		morphology_image.hide()
+		flat_morphology_image = morphology_image.flatten()
+		morphology_path = os.path.join(analysis.namer.figures_dir, "{}_morphology".format(analysis.namer.base_name))
+		IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
 		pass # Morphology image
 
 	if analysis.CN:
+		composite_list = get_channel_colormap(analysis)
+		composite_string = " ".join(['c3=[DAPI]', 'c6=[Fiber Border]'])
+		analysis.border_channel.show()
+		analysis.dapi_channel.show()
+		IJ.run("Merge Channels...", composite_string+" create keep")
+		CN_image = IJ.getImage()
+		analysis.border_channel.hide()
+		analysis.dapi_channel.hide()
+#		flat_CN_image = CN_image.flatten()
+#		CN_path = os.path.join(analysis.namer.figures_dir, "{}_central_nucleation".format(analysis.namer.base_name))
+		# IJ.saveAs(flat_CN_image, "Jpg", CN_path)
+		
+#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
+#		gradient_nucleation_path = os.path.join(analysis.namer.figures_dir, "{}_gradient_nucleation".format(analysis.namer.base_name))
+		#IJ.saveAs(flat_gradient_nucleation_image, "Jpg", gradient_nucleation_path)
 		pass # Central-nucleation composite image
 		# Multiple erosion image with fraction as image label
 		
@@ -66,9 +103,21 @@ if __name__ in ['__builtin__','__main__']:
 	
 	fs = FiberSight(input_image_path=image_path) # Opens FiberSight
 	IJ.log("\\Clear")
-	if fs.close_control.terminated:
-		sys.exit(0)
-		
+	try:
+		if fs.close_control.terminated:
+			analysis.cleanup()
+			sys.exit(0)
+	except Exception as e:
+		IJ.log("Error during cleanup: {}".format(e))
+		sys.exit(1)
+	
+	ANALYSIS_CONFIG = {
+		"min_fiber_size": 10,
+		"prop_threshold": 50,
+		"num_nuclei_check": 8,
+		"blur_radius": 4
+	}
+	
 	im_path = fs.get_image_path()
 	roi_path = fs.get_roi_path()
 	channels = [fs.get_channel(channel_idx) for  channel_idx in range(len(fs.channels))]
@@ -102,8 +151,7 @@ if __name__ in ['__builtin__','__main__']:
 		IJ.log("Fibers loaded from: {}".format(analysis.namer.fiber_roi_path))
 
 	if remove_small_fibers:
-		min_fiber_size = 10
-		analysis.rm_fiber = remove_small_rois(analysis.rm_fiber, analysis.imp, min_fiber_size)
+		analysis.rm_fiber = remove_small_rois(analysis.rm_fiber, analysis.imp, ANALYSIS_CONFIG["min_fiber_size"])
 
 	if remove_fibers_outside_border:
 		IJ.log("### Loading Previously Generated Manual Border ###")
@@ -119,12 +167,11 @@ if __name__ in ['__builtin__','__main__']:
 
 	if analysis.CN:
 		roiArray, rm_nuclei = find_all_nuclei(analysis.dapi_channel, analysis.rm_fiber)
-		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = 8)
+		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = ANALYSIS_CONFIG["num_nuclei_check"])
 		results_dict["Peripheral Nuclei"] = determine_number_peripheral(results_dict["Central Nuclei"], results_dict["Total Nuclei"])
 		rm_central.close()
 		rm_nuclei = create_roi_manager_from_ROIs(roiArray)	
 
-		
 	analysis.imp.show()
 	analysis.rm_fiber.runCommand("Show All")
 	analysis.imp.setRoi(analysis.drawn_border_roi)
@@ -137,10 +184,12 @@ if __name__ in ['__builtin__','__main__']:
 		area_frac = OrderedDict()
 		analysis.namer.create_directory("masks")
 		for channel in analysis.ft_channels:
-			area_frac["{}_%-Area".format(channel.getTitle())], channel_dup = fiber_type_channel(channel, analysis.rm_fiber, blur_radius=4, threshold_method=threshold_method, image_correction=image_correction, drawn_border_roi=analysis.drawn_border_roi)
+			area_frac["{}_%-Area".format(channel.getTitle())], channel_dup = fiber_type_channel(channel, analysis.rm_fiber, blur_radius=ANALYSIS_CONFIG["blur_radius"], threshold_method=threshold_method, image_correction=image_correction, drawn_border_roi=analysis.drawn_border_roi)
 			channel_dup.show()
-			ft_mask_path = os.path.join(analysis.namer.masks_dir, analysis.namer.base_name)
-			IJ.saveAs(channel_dup, "Png", "{}_{}_{}".format(ft_mask_path,channel_dup.title,threshold_method,image_correction))
+			ft_mask_vars = [analysis.namer.base_name, channel_dup.title, threshold_method, image_correction]
+			mask_filename = "_".join([str(s) for s in ft_mask_vars])
+			ft_mask_path = os.path.join(analysis.namer.masks_dir, mask_filename)
+			IJ.saveAs(channel_dup, "Png", ft_mask_path)
 	
 		IJ.log("### Identifying Positive Fraction Fiber Type ###")
 		for key in area_frac.keys():
@@ -148,7 +197,7 @@ if __name__ in ['__builtin__','__main__']:
 	
 		ch_list = [channel.title for channel in analysis.ft_channels]
 		IJ.log("### Identifying fiber types ###")
-		identified_fiber_types, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=assess_hybrid, T2_hybrid=assess_hybrid, T3_hybrid=assess_hybrid, prop_threshold = 50)		
+		identified_fiber_types, areas = generate_ft_results(area_frac, ch_list, T1_hybrid=assess_hybrid, T2_hybrid=assess_hybrid, T3_hybrid=assess_hybrid, prop_threshold = ANALYSIS_CONFIG["prop_threshold"])		
 		results_dict["Fiber_Type"] = identified_fiber_types
 		
 		IJ.log("### Counting Fiber Types ###")
