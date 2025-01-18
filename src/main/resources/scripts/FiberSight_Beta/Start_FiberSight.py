@@ -15,21 +15,6 @@ import os, sys
 from collections import Counter, OrderedDict
 reload_modules()
 
-def isBrightfield(channels):
-	"""
-	Checks if an image is Brightfield based on if the first channel is labelled as 'Fiber Borders',
-	and the subsequent channels are labelled as 'None'.
-	"""
-	return channels[0] == "Fiber Border" and all([channel == "None" for channel in channels[1:4]])
-
-def get_fiber_border_channel(channels):
-	"""
-	Returns the index of the fiber border channel selected, offset by positive 1
-	"""
-	for enum, channel in enumerate(channels):
-		if channel == "Fiber Border":
-			return enum+1
-
 def create_roi_manager_from_ROIs(roiArray, imp=None):
 	"""
 	Creates an ROI manager from an array of ROIs. This function helps with performing tasks that require juggling ROI managers.
@@ -38,61 +23,6 @@ def create_roi_manager_from_ROIs(roiArray, imp=None):
 	for enum, roi in enumerate(roiArray):
 		rm.add(imp, roi, enum)
 	return rm
-
-def save_results(analysis):
-	"""
-	Creates a directory in standard location, then saves the results to it.
-	"""
-	analysis.namer.create_directory("results")
-	IJ.saveAs("Results", analysis.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
-
-def get_channel_colormap(analysis):
-	composite_list = []
-	cmap = {"Type IIx":"c1", "Type IIa":"c5", "DAPI":"c3", "Fiber Border":"c6", "Type I":"c7"}
-	for channel in analysis.all_channels:
-		if channel is not None:
-			color = cmap[channel]
-			composite_list.append("{}=[{}]".format(color, channel))
-	return composite_list
-
-def create_figures(analysis):
-	analysis.namer.create_directory("figures")
-	if analysis.Morph:
-		morphology_image = analysis.imp.duplicate()
-		for label in range(analysis.rm_fiber.getCount()):
-			analysis.rm_fiber.rename(label, str(label+1))
-		
-		Prefs.useNamesAsLabels = True;
-		analysis.rm_fiber.runCommand(morphology_image, "Show All with Labels")
-		IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
-		analysis.rm_fiber.moveRoisToOverlay(morphology_image)
-		morphology_image.hide()
-		flat_morphology_image = morphology_image.flatten()
-		morphology_path = os.path.join(analysis.namer.figures_dir, "{}_morphology".format(analysis.namer.base_name))
-		IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
-		pass # Morphology image
-
-	if analysis.CN:
-		composite_list = get_channel_colormap(analysis)
-		composite_string = " ".join(['c3=[DAPI]', 'c6=[Fiber Border]'])
-		analysis.border_channel.show()
-		analysis.dapi_channel.show()
-		IJ.run("Merge Channels...", composite_string+" create keep")
-		CN_image = IJ.getImage()
-		analysis.border_channel.hide()
-		analysis.dapi_channel.hide()
-#		flat_CN_image = CN_image.flatten()
-#		CN_path = os.path.join(analysis.namer.figures_dir, "{}_central_nucleation".format(analysis.namer.base_name))
-		# IJ.saveAs(flat_CN_image, "Jpg", CN_path)
-		
-#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
-#		gradient_nucleation_path = os.path.join(analysis.namer.figures_dir, "{}_gradient_nucleation".format(analysis.namer.base_name))
-		#IJ.saveAs(flat_gradient_nucleation_image, "Jpg", gradient_nucleation_path)
-		pass # Central-nucleation composite image
-		# Multiple erosion image with fraction as image label
-		
-	if analysis.FT:
-		pass # Fiber-Type composite image
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
@@ -121,7 +51,7 @@ if __name__ in ['__builtin__','__main__']:
 	im_path = fs.get_image_path()
 	roi_path = fs.get_roi_path()
 	channels = [fs.get_channel(channel_idx) for  channel_idx in range(len(fs.channels))]
-	brightfield = isBrightfield(channels)
+
 	cellpose_diam = fs.get_cellpose_diameter()
 	cellpose_model = fs.get_cellpose_model()
 	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
@@ -129,18 +59,11 @@ if __name__ in ['__builtin__','__main__']:
 	remove_small_fibers = fs.get_remove_small()
 	remove_fibers_outside_border = True if analysis.drawn_border_roi is not None else False
 	results_dict = {}
-	
-	if analysis.rm_fiber is None:
-		run_cellpose = True
-	elif fs.get_overwrite_button():
-		run_cellpose = True
-	else:
-		run_cellpose = False
-	
+	run_cellpose = True if analysis.rm_fiber is None or fs.get_overwrite_button() else False	
 	if run_cellpose:
 		IJ.log("### Running Cellpose ###")
 		save_rois="True"
-		seg_chan = 0 if brightfield else get_fiber_border_channel(channels)
+		seg_chan = 0 if analysis.isBrightfield() else analysis.get_fiber_border_channel_position(channels)
 		imp_dup = analysis.imp.duplicate()
 		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, cellpose_diam, cellpose_model, save_rois, seg_chan)
 		IJ.run(imp_dup, "Cellpose Image",image_string)
@@ -220,7 +143,7 @@ if __name__ in ['__builtin__','__main__']:
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	# Save results
-	save_results(analysis)
+	analysis.save_results()
 	create_figures(analysis)
 
 # fs = FiberSight()
