@@ -553,7 +553,7 @@ def mergeChannels(orig_channels, mergeTitle):
 
 	return imp
 
-def findInNearestFibers(nearestFibers, rm, xCenter, yCenter, draw=None, imp=None, xFib=None, yFib=None):
+def findInNearestFibers(nearestFibers, rm, xCenter, yCenter, imp=None, xFib=None, yFib=None):
 	'''Finds the number of markers in each muscle fiber.
 	Requires centroid positions of each marker of interest.
 	Parameters:
@@ -571,7 +571,7 @@ def findInNearestFibers(nearestFibers, rm, xCenter, yCenter, draw=None, imp=None
 			roi = rm.getRoi(mindex)
 			if roi.containsPoint(xCenter[loc], yCenter[loc]):
 				countMarker[mindex]+=1
-				if draw is not None:
+				if imp is not None:
 					drawCatch(xCenter[loc], yCenter[loc], xFib[mindex], yFib[mindex], imp)
 				break
 		if (loc == nTotal-1):
