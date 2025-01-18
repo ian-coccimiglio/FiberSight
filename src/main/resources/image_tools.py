@@ -341,6 +341,23 @@ def convertLabelsToROIs(imp_labels):
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 		return None
 
+def find_cellpose_env(homedir):
+	
+	possible_paths = [
+		os.path.join(homedir, "miniconda3", "envs", "cellpose"),
+		os.path.join(homedir, "miniconda", "envs", "cellpose"),
+		os.path.join(homedir, "anaconda3", "envs", "cellpose")
+	]
+	for path in possible_paths:
+		IJ.log("Checking path at {}".format(path))
+		if os.path.exists(path):
+			IJ.log("Found cellpose environment")
+			return path
+			break
+	else:
+		IJ.error("Cellpose environment not found", "Checked typical paths,\nEnsure to install Cellpose and set the appropriate env_path")
+		return False
+
 def runCellpose(image, 
 	env_path=None,
 	model_path = "", 
@@ -352,22 +369,7 @@ def runCellpose(image,
 	ch2=0):
 	
 	if env_path is None:
-		homedir = os.path.expanduser("~")
-		
-		possible_paths = [
-			os.path.join(homedir, "miniconda3", "envs", "cellpose"),
-			os.path.join(homedir, "miniconda", "envs", "cellpose"),
-			os.path.join(homedir, "anaconda3", "envs", "cellpose")
-		]
-		for path in possible_paths:
-			IJ.log("Checking path at {}".format(path))
-			if os.path.exists(path):
-				IJ.log("Found cellpose environment")
-				env_path = path
-				break
-		else:
-			IJ.error("Cellpose environment not found", "Checked typical paths,\nEnsure to install Cellpose and set the appropriate env_path")
-			return False
+		env_path = find_cellpose_env(os.path.expanduser("~"))
 	elif not os.path.exists(env_path):
 		IJ.error("Cellpose environment not found", "Checked path at {},\nEnsure to install Cellpose and set the appropriate env_path".format(env_path))
 		return False
@@ -397,31 +399,6 @@ def runCellpose(image,
 		IJ.log("Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/")
 	
 	return cellpose_str
-
-#def runCellpose(image, cellposeModel="cyto2", cellposeDiameter=30, cellposeProbability=0.0, cellposeFlowThreshold=0.4, nucChannel=0, cytoChannel=0, anisotropy=1.0, diam_threshold=12):
-#	''' Runs the cellpose algorithm for segmentation using the PT-BIOP plugin '''
-#	print "Running Cellpose Segmentation algorithm"
-#	
-#	cellpose_str = model=str(cellposeModel)+ \
-#	" conda_env_path=/home/ian/miniconda3/envs/cellpose"+ \
-#	" env_type=conda"+ \
-#	" diameter="+str(cellposeDiameter)+ \
-#	" cellproba_threshold="+str(cellposeProbability)+ \
-#	" flow_threshold="+str(cellposeFlowThreshold)+ \
-#	" model="+cellposeModel+ \
-#	" ch1="+str(nucChannel)+ \
-#	" ch2="+str(cytoChannel)+ \
-#	" dimensionmode=2D"+ \
-#	" anisotropy="+str(anisotropy)+ \
-#	" diam_threshold="+str(diam_threshold) + \
-#	" stitch_threshold=-1"+ \
-#	" omni=False"+ \
-#	" cluster=False"+ \
-#	" additional_flags=''"
-#	
-#
-#	return cellpose_str
-		
 		
 def pickImage(image):
 	IJ.selectWindow(image)
