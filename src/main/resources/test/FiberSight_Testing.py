@@ -156,6 +156,21 @@ class TestCellposeFluorescence(unittest.TestCase):
 		# WM.getWindow("Log").close()	
 		self.setup.rm_fiber.close()
 
+#class TestRoiModification(unittest.TestCase):
+#	def setUp(self):
+#		# Open a non-calibrated image
+#	
+#	def test_small_uncalibrated_removal(self):
+#	
+#	def test_small_calibrated_removal(self):
+#	
+#	def test_border_removal_gpu(self):
+#	
+#	def test_border_removal_cpu(self):
+#	
+#	def tearDown(self):
+#	
+
 def run_tests():
 	# Create test suite
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestFileNamer)
