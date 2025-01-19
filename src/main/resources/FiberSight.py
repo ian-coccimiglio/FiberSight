@@ -1,5 +1,5 @@
 from javax.swing import JFrame, JLabel, JPanel, JButton, JRadioButton, JSpinner, SpinnerNumberModel, \
-    ButtonGroup, JTextField, JDialog, JOptionPane, ImageIcon, SwingConstants, JComboBox, JCheckBox
+    ButtonGroup, JTextField, JDialog, JOptionPane, ImageIcon, SwingConstants, JComboBox, JCheckBox, JSeparator
 from java.awt import GridBagConstraints as GBC, GridBagLayout, Font, Insets,\
     Color, GridLayout
 from javax.swing.border import EmptyBorder
@@ -43,6 +43,7 @@ class FiberSight(WindowAdapter):
         self._addChannels()
         self._addToggleButton()
         self._addStart()
+        self._addModel()
         
         self.advancedPanel = self.create_advanced_panel()
         self.advancedPanel.setVisible(False)  # Hidden by default
@@ -61,20 +62,37 @@ class FiberSight(WindowAdapter):
         self.mainFrame.visible = True
         self.mainFrame.getRootPane().setDefaultButton(self.start_button)
 
-
+    def _addModel(self):
+        model_label = JLabel("Cellpose Model")
+        sep = JSeparator(SwingConstants.VERTICAL)
+        
+        self.cellpose_model = JComboBox(["cyto3", "PSR_9", "HE_30", "WGA_21"])
+        self.cellpose_model.createToolTip()
+        self.cellpose_model.setToolTipText("cyto3 model is the baseline model, others are finetuned")
+        gbc = GBC()
+        gbc.gridx = 0
+        gbc.gridy = 0
+        self.bottomPanel.add(model_label, gbc)
+        gbc.gridy = 1
+        gbc.gridx = 0
+#        gbc.ipady = 10
+        self.bottomPanel.add(self.cellpose_model, gbc)
+        gbc.gridy = 0
+        gbc.gridx = 1
+        gbc.gridheight = 2
+        gbc.weighty = 2
+        gbc.insets = Insets(5,10,5,10)
+        gbc.fill = GBC.VERTICAL
+        self.bottomPanel.add(sep, gbc)
+        
     def create_advanced_panel(self):
         panel = JPanel(GridBagLayout())
         panel.setBorder(EmptyBorder(1,1,1,1))
         gbc = GBC()
         
         # Add your advanced options here
-        advanced_model_label = JLabel("Cellpose Model")
         advanced_diameter_label = JLabel("Cellpose Diameter")
         advanced_ft_label = JLabel("Fiber-Typing Thresholding")
-        
-        self.advanced_model = JComboBox(["cyto3", "PSR_9", "HE_30", "WGA_21"])
-        self.advanced_model.createToolTip()
-        self.advanced_model.setToolTipText("cyto3 model is the baseline model, others are finetuned")
 
         self.advanced_ft_method = JComboBox(["Huang", "Mean", "Otsu"])
         self.advanced_ft_method.createToolTip()
@@ -82,7 +100,7 @@ class FiberSight(WindowAdapter):
 
         self.advanced_diameter = JSpinner(SpinnerNumberModel(0, 0, 200, 1))
         self.advanced_diameter.createToolTip()
-        self.advanced_diameter.setToolTipText("Diameter of 0 will auto-estimate diameter given the cyto3 model")
+        self.advanced_diameter.setToolTipText("Diameter of 0 will auto-estimate diameter given the cyto3 model, otherwise 0 will use the training size")
 
         self.advanced_remove = JCheckBox("Remove Small ROIs", True)
         self.advanced_remove.createToolTip()
@@ -101,7 +119,7 @@ class FiberSight(WindowAdapter):
         self.advanced_overwrite_button.setToolTipText("Will overwrite an existing segmentation in cellpose_rois directory")
         
         cellpose_listener = self.ToggleOverwrite(self.advanced_overwrite_button)
-        self.advanced_model.addActionListener(cellpose_listener)
+        self.cellpose_model.addActionListener(cellpose_listener)
         self.advanced_diameter.addChangeListener(cellpose_listener)
 
         gbc.gridx = 0
@@ -116,17 +134,8 @@ class FiberSight(WindowAdapter):
         gbc.fill = GBC.HORIZONTAL
         gbc.gridx = 1
         panel.add(self.advanced_diameter, gbc)
-        
-        gbc.gridx = 0
+                
         gbc.gridy = 1
-        gbc.anchor = GBC.EAST
-        gbc.fill = GBC.NONE
-        panel.add(advanced_model_label, gbc)
-        gbc.gridx = 1
-        gbc.fill = GBC.HORIZONTAL
-        panel.add(self.advanced_model, gbc)
-        
-        gbc.gridy = 2
         gbc.gridx = 0
         panel.add(advanced_ft_label, gbc)
         gbc.gridx = 1
@@ -153,7 +162,7 @@ class FiberSight(WindowAdapter):
     def _addToggleButton(self):
         gbc = GBC()
         gbc.gridy = 0
-        gbc.gridx = 5
+        gbc.gridx = 7
         gbc.ipady = 10
         self.advanced_toggle = JCheckBox("Show Advanced Options")
         self.advanced_toggle.addActionListener(self.toggle_advanced_options)
@@ -171,15 +180,17 @@ class FiberSight(WindowAdapter):
         channels_4 = self._place_channel_dropdown(self.bottomPanel, "None", 4)
         self.channels.extend([channels_1, channels_2, channels_3, channels_4])
         
-    def _place_channel_dropdown(self, panel, selected_item, height):
+    def _place_channel_dropdown(self, panel, selected_item, pos):
         gbc=GBC()
-        channel_labels = JLabel("Channel {}".format(height))
+        gbc.gridy = 0
+        channel_labels = JLabel("Channel {}".format(pos))
         channel_chooser = JComboBox(self.CHANNEL_OPTIONS)
         channel_chooser.setSelectedItem(selected_item)
+        gbc.gridx = pos+2
         panel.add(channel_labels, gbc)
+        gbc.gridy = 1
         gbc.anchor = GBC.CENTER
         gbc.insets = Insets(5,2,2,5)
-        gbc.gridx = height-1
         gbc.anchor = GBC.WEST
         panel.add(channel_chooser, gbc)
         return channel_chooser
@@ -198,7 +209,7 @@ class FiberSight(WindowAdapter):
         gbc.anchor = GBC.EAST
         gbc.ipady = 10
         gbc.gridy = 1
-        gbc.gridx = 5
+        gbc.gridx = 7
         gbc.insets = Insets(5,2,2,5)
         self.bottomPanel.add(self.start_button, gbc)
     
@@ -306,7 +317,7 @@ class FiberSight(WindowAdapter):
             JOptionPane().showMessageDialog(None, "Please enter an image file")
     
     def get_cellpose_model(self):
-        return self.advanced_model.getSelectedItem()
+        return self.cellpose_model.getSelectedItem()
     
     def get_threshold_method(self):
         return self.advanced_ft_method.getSelectedItem()
