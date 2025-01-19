@@ -32,15 +32,14 @@ def find_all_nuclei(dapi_channel, rm_fiber):
 	roiArray, rm_nuclei = analyze_particles_get_roi_array(imp_temp, PA_settings)
 	return roiArray, rm_nuclei
 
-def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8):
+def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8, imp=None):
 	nFibers = rm_fiber.getCount()
 	xFib, yFib = getCentroidPositions(rm_fiber)
 	xNuc, yNuc = getCentroidPositions(rm_nuclei)
 	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	all_reduced = []
-	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, draw=None)
-	print relative_reduced_area
+	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None)
 	return count_central, count_nuclei, rm_central
 
 def determine_number_peripheral(count_central, count_nuclei):
@@ -63,7 +62,7 @@ def show_rois(imp, roi_array):
 		overlay.add(roi)
 	imp.draw()
 
-def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, draw=None):
+def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None):
 	RM_central = RoiManager()
 	rm_central = RM_central.getRoiManager()
 	relative_reduced_area = []
@@ -85,7 +84,7 @@ def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yN
 	
 	# print(new_roi.getStatistics().area)
 	all_reduced.append(sum(relative_reduced_area)/len(relative_reduced_area))
-	count_central = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, draw=None, xFib=xFib, yFib=yFib)
+	count_central = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, xFib=xFib, yFib=yFib, imp=imp)
 	return count_central, relative_reduced_area, rm_central
 
 def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers):

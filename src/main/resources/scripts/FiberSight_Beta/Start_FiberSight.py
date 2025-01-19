@@ -35,7 +35,7 @@ if __name__ in ['__builtin__','__main__']:
 	IJ.log("\\Clear")
 	try:
 		if fs.close_control.terminated:
-			analysis.cleanup()
+			WM.getWindow("Log").close()
 			sys.exit(0)
 	except Exception as e:
 		IJ.log("Error during cleanup: {}".format(e))
@@ -50,27 +50,26 @@ if __name__ in ['__builtin__','__main__']:
 	
 	im_path = fs.get_image_path()
 	roi_path = fs.get_roi_path()
-	channels = [fs.get_channel(channel_idx) for  channel_idx in range(len(fs.channels))]
-
+	channels = [fs.get_channel(channel_idx) for channel_idx in range(len(fs.channels))]
 	cellpose_diam = fs.get_cellpose_diameter()
 	cellpose_model = fs.get_cellpose_model()
-	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
-	
 	remove_small_fibers = fs.get_remove_small()
-	remove_fibers_outside_border = True if analysis.drawn_border_roi is not None else False
+	
+	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
+	remove_fibers_outside_border = analysis.drawn_border_roi is not None
 	results_dict = {}
-	run_cellpose = True if analysis.rm_fiber is None or fs.get_overwrite_button() else False	
+	run_cellpose = analysis.rm_fiber is None or fs.get_overwrite_button()
 	if run_cellpose:
 		IJ.log("### Running Cellpose ###")
 		save_rois="True"
-		seg_chan = 0 if analysis.isBrightfield() else analysis.get_fiber_border_channel_position(channels)
+		seg_chan = 0 if analysis.is_brightfield() else analysis.get_fiber_border_channel_position()
 		imp_dup = analysis.imp.duplicate()
 		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, cellpose_diam, cellpose_model, save_rois, seg_chan)
 		IJ.run(imp_dup, "Cellpose Image",image_string)
 		analysis.rm_fiber = RoiManager().getRoiManager()
 		IJ.run("Close All")
 	else:
-		IJ.log("### Using previously generated segmentations ###")
+		IJ.log("### Using previously generated fiber segmentations ###")
 		IJ.log("Fibers loaded from: {}".format(analysis.namer.fiber_roi_path))
 
 	if remove_small_fibers:
@@ -109,6 +108,7 @@ if __name__ in ['__builtin__','__main__']:
 		for channel in analysis.ft_channels:
 			area_frac["{}_%-Area".format(channel.getTitle())], channel_dup = fiber_type_channel(channel, analysis.rm_fiber, blur_radius=ANALYSIS_CONFIG["blur_radius"], threshold_method=threshold_method, image_correction=image_correction, drawn_border_roi=analysis.drawn_border_roi)
 			channel_dup.show()
+			IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
 			ft_mask_vars = [analysis.namer.base_name, channel_dup.title, threshold_method, image_correction]
 			mask_filename = "_".join([str(s) for s in ft_mask_vars])
 			ft_mask_path = os.path.join(analysis.namer.masks_dir, mask_filename)
@@ -130,7 +130,7 @@ if __name__ in ['__builtin__','__main__']:
 		IJ.log("### Calculating Fiber Diagnostics ###")
 		IJ.log("Total Number of Fibers = {}".format(str(total_Fibers)))
 		# IJ.log("-- SigBlur {}, Flat-field {}, Thresh {}".format(self.ft_sigma_blur, self.ft_flat_blurring, threshold_method))
-		for fibertype in c.most_common(8):
+		for fibertype in c.most_common():
 			fraction = round(float(fibertype[1])/float(total_Fibers)*100,2)
 			IJ.log("Type {} fibers: {} ({}%) of fibers".format(fibertype[0], fibertype[1], fraction))
 		
@@ -139,11 +139,9 @@ if __name__ in ['__builtin__','__main__']:
 			channel_dup.setRoi(analysis.drawn_border_roi)
 			IJ.run(channel_dup, "Clear Outside", "")
 			
-		IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
+		
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	# Save results
 	analysis.save_results()
-	create_figures(analysis)
-
-# fs = FiberSight()
+	analysis.create_figures()
