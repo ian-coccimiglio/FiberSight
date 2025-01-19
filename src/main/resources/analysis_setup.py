@@ -67,32 +67,38 @@ class AnalysisSetup:
 	
 	def create_figures(self):
 		self.namer.create_directory("figures")
+		Prefs.useNamesAsLabels = True;
 		if self.Morph:
-			morphology_image = self.imp.duplicate()
+			if self.is_brightfield():
+				morphology_image = self.imp.duplicate()
+			else:
+				morphology_image = self.border_channel.duplicate()
+				
 			for label in range(self.rm_fiber.getCount()):
 				self.rm_fiber.rename(label, str(label+1))
 			
-			Prefs.useNamesAsLabels = True;
-			self.rm_fiber.runCommand(morphology_image, "Show All with Labels")
-			IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
+			# morphology_image.show()
 			self.rm_fiber.moveRoisToOverlay(morphology_image)
-			morphology_image.hide()
+			# self.rm_fiber.runCommand(morphology_image, "Show All with Labels")
+			# self.rm_fiber.show()
+			IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
 			flat_morphology_image = morphology_image.flatten()
+			flat_morphology_image.show()
 			morphology_path = os.path.join(self.namer.figures_dir, "{}_morphology".format(self.namer.base_name))
 			IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
 			pass # Morphology image
 	
 		if self.CN:
-			composite_string = " ".join(['c3=[DAPI]', 'c6=[Fiber Border]'])
+			CN_composite_string = " ".join(['c3=[DAPI]', 'c6=[Fiber Border]'])
 			self.border_channel.show()
 			self.dapi_channel.show()
-			IJ.run("Merge Channels...", composite_string+" create keep")
+			IJ.run("Merge Channels...", CN_composite_string+" create keep")
 			CN_image = IJ.getImage()
 			self.border_channel.hide()
 			self.dapi_channel.hide()
-	#		flat_CN_image = CN_image.flatten()
-	#		CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
-			# IJ.saveAs(flat_CN_image, "Jpg", CN_path)
+			flat_CN_image = CN_image.flatten()
+			CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
+			IJ.saveAs(flat_CN_image, "Jpg", CN_path)
 			
 	#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
 	#		gradient_nucleation_path = os.path.join(self.namer.figures_dir, "{}_gradient_nucleation".format(self.namer.base_name))
@@ -103,9 +109,14 @@ class AnalysisSetup:
 		if self.FT:
 			pass # Fiber-Type composite image
 	
-	def isBrightfield(self):
+	def cleanup(self):
+		WM.getWindow("Log").close()
+		self.imp.close()
+		self.rm_fiber.close()
+	
+	def is_brightfield(self):
 		"""
-		Checks if an image is Brightfield based on if the first channel is labelled as 'Fiber Borders',
+		Checks if an image is brightfield based on if the first channel is labelled as 'Fiber Borders',
 		and the subsequent channels are labelled as 'None'.
 		"""
 		return self.all_channels[0] == "Fiber Border" and all(ch is None for ch in self.all_channels[1:4])
