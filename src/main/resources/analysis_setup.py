@@ -2,12 +2,12 @@
 
 from ij import IJ, ImagePlus, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
-from image_tools import read_image
+from image_tools import read_image, mergeChannels
 import os, sys
 from utilities import get_drawn_border_roi, make_directories
 from java.io import File
 from image_formatting import ImageStandardizer
-from ij.plugin import ChannelSplitter, RoiEnlarger
+from ij.plugin import ChannelSplitter, RoiEnlarger, LutLoader
 from file_naming import FileNamer
 
 class AnalysisSetup:
@@ -55,6 +55,8 @@ class AnalysisSetup:
 
 		self.ft_sigma_blur=ft_sigma_blur
 		self.border_channel, self.dapi_channel, self.ft_channels = self.rename_channels() # Renames channels according
+		if self.border_channel is not None and self.dapi_channel is not None:
+			self.cn_merge = mergeChannels([analysis.border_channel, analysis.dapi_channel], "CN_Merge")
 		self.Morph, self.CN, self.FT = self.assign_analyses()
 		self.drawn_border_roi = self.get_manual_border()
 	
@@ -65,7 +67,7 @@ class AnalysisSetup:
 		self.namer.create_directory("results")
 		IJ.saveAs("Results", self.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
 	
-	def create_figures(self):
+	def create_figures(self, central_rois=None):
 		self.namer.create_directory("figures")
 		Prefs.useNamesAsLabels = True;
 		if self.Morph:
@@ -76,29 +78,31 @@ class AnalysisSetup:
 				
 			for label in range(self.rm_fiber.getCount()):
 				self.rm_fiber.rename(label, str(label+1))
-			
-			# morphology_image.show()
+
 			self.rm_fiber.moveRoisToOverlay(morphology_image)
-			# self.rm_fiber.runCommand(morphology_image, "Show All with Labels")
-			# self.rm_fiber.show()
+			self.rm_fiber.runCommand(morphology_image, "Show All with Labels")
 			IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
+			IJ.run(morphology_image, "Magenta", "");
+			morphology_image = morphology_image.flatten()
+			morphology_image.setRoi(self.drawn_border_roi)
 			flat_morphology_image = morphology_image.flatten()
-			flat_morphology_image.show()
 			morphology_path = os.path.join(self.namer.figures_dir, "{}_morphology".format(self.namer.base_name))
 			IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
 			pass # Morphology image
 	
 		if self.CN:
-			CN_composite_string = " ".join(['c3=[DAPI]', 'c6=[Fiber Border]'])
-			self.border_channel.show()
-			self.dapi_channel.show()
-			IJ.run("Merge Channels...", CN_composite_string+" create keep")
-			CN_image = IJ.getImage()
+			IJ.run(cn_merge, "Magenta", "");
+			cn_merge.setPosition(2)
+			IJ.run(cn_merge, "Blue", "");
+			cn_merge = cn_merge.flatten()
+			show_rois(cn_merge, central_rois.getRoisAsArray())
+			
 			self.border_channel.hide()
 			self.dapi_channel.hide()
 			flat_CN_image = CN_image.flatten()
 			CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
 			IJ.saveAs(flat_CN_image, "Jpg", CN_path)
+			CN_image.hide()
 			
 	#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
 	#		gradient_nucleation_path = os.path.join(self.namer.figures_dir, "{}_gradient_nucleation".format(self.namer.base_name))

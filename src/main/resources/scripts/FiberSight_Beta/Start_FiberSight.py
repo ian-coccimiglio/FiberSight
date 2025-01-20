@@ -3,16 +3,17 @@ from ij.gui import GenericDialog
 from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
 from FiberSight import FiberSight
-from image_tools import detectMultiChannel, pickImage, remove_small_rois, make_results, convertLabelsToROIs
+from image_tools import detectMultiChannel, pickImage, remove_small_rois, make_results, convertLabelsToROIs, mergeChannels
 from jy_tools import attrs, reload_modules, closeAll
 from analysis_setup import AnalysisSetup
 from file_naming import FileNamer
 from fiber_morphology import estimate_fiber_morphology
-from central_nucleation import find_all_nuclei, determine_central_nucleation, determine_number_peripheral
+from central_nucleation import find_all_nuclei, determine_central_nucleation, determine_number_peripheral, show_rois
 from muscle_fiber_typing import fiber_type_channel, generate_ft_results 
 from remove_edge_labels import ROI_border_exclusion
 import os, sys
 from collections import Counter, OrderedDict
+from roi_utils import read_rois
 reload_modules()
 
 def create_roi_manager_from_ROIs(roiArray, imp=None):
@@ -78,8 +79,10 @@ if __name__ in ['__builtin__','__main__']:
 	if remove_fibers_outside_border:
 		IJ.log("### Loading Previously Generated Manual Border ###")
 		IJ.log("Loading manual border from {}".format(analysis.namer.border_path))
-		edgeless, imp_base = ROI_border_exclusion(analysis.border_channel, analysis.drawn_border_roi, analysis.rm_fiber, separate_rois=True, GPU=True)
-		imp_base.hide()
+		fiber_rois = analysis.rm_fiber.getRoisAsArray()
+		edgeless, overlay_image = ROI_border_exclusion(analysis.border_channel, analysis.drawn_border_roi, fiber_rois, separate_rois=True, GPU=True)
+		overlay_image.hide()
+		analysis.border_channel.hide()
 		rm_test = convertLabelsToROIs(edgeless)
 		edgeless.hide()
 		# TODO: Save these ROIs #
@@ -89,14 +92,20 @@ if __name__ in ['__builtin__','__main__']:
 
 	if analysis.CN:
 		roiArray, rm_nuclei = find_all_nuclei(analysis.dapi_channel, analysis.rm_fiber)
-		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = ANALYSIS_CONFIG["num_nuclei_check"])
+		
+		cn_merge.hide()
+
+		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = ANALYSIS_CONFIG["num_nuclei_check"], imp=analysis.cn_merge)
 		results_dict["Peripheral Nuclei"] = determine_number_peripheral(results_dict["Central Nuclei"], results_dict["Total Nuclei"])
+		for label in range(rm_central.getCount()):
+			rm_central.rename(label, str(results_dict["Central Nuclei"][label]))
+		IJ.run(cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
 		rm_central.close()
 		rm_nuclei = create_roi_manager_from_ROIs(roiArray)	
 
-	analysis.imp.show()
-	analysis.rm_fiber.runCommand("Show All")
-	analysis.imp.setRoi(analysis.drawn_border_roi)
+#	analysis.imp.show()
+#	analysis.rm_fiber.runCommand("Show All")
+#	analysis.imp.setRoi(analysis.drawn_border_roi)
 	
 	if analysis.FT:
 		assess_hybrid = fs.get_ft_hybrid()
@@ -142,6 +151,5 @@ if __name__ in ['__builtin__','__main__']:
 		
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
-	# Save results
 	analysis.save_results()
 	analysis.create_figures()
