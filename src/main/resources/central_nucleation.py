@@ -39,7 +39,7 @@ def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8, imp=None):
 	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	all_reduced = []
-	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None)
+	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=imp)
 	return count_central, count_nuclei, rm_central
 
 def determine_number_peripheral(count_central, count_nuclei):
@@ -61,6 +61,7 @@ def show_rois(imp, roi_array):
 	for roi in roi_array:
 		overlay.add(roi)
 	imp.draw()
+	imp.setOverlay(overlay)
 
 def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None):
 	RM_central = RoiManager()
@@ -87,7 +88,7 @@ def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yN
 	count_central = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, xFib=xFib, yFib=yFib, imp=imp)
 	return count_central, relative_reduced_area, rm_central
 
-def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers):
+def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None):
 	num_central = []
 	all_reduced = []
 	
@@ -100,7 +101,7 @@ def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers):
 			rm_central.runCommand("Deselect")
 			rm_central.runCommand("Delete")
 		
-		count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers)
+		count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None)
 		
 		num_central.append(sum([count_central[count] > 0 for count in count_central]))	
 	
@@ -144,21 +145,7 @@ if __name__ == "__main__":
 	# unitType = watershedParticles(DAPI.title)
 	
 	# Nuclei determination
-	imp_temp = DAPI.duplicate()
-	imp_temp.title = "{} Temp".format(DAPI.title)
-	Prefs.blackBackground = True
-	IJ.setAutoThreshold(imp_temp, "Otsu dark")
-	IJ.run(imp_temp, "Convert to Mask", "")
-	IJ.run(imp_temp, "Watershed", "")
-	IJ.run("Set Measurements...", "area centroid redirect=None decimal=3")
-	rm_fiber.close()
-	PA_settings = "size=1.0--Infinity circularity=0-1.00 add"
-	
-	rois, newRM = analyze_particles_get_roi_array(imp_temp, PA_settings)
-	
-	rm_nuclei = RoiManager(False)
-	PA.setRoiManager(rm_nuclei)
-	IJ.run(imp_temp, "Analyze Particles...", PA_settings)
+	roiArray, rm_nuclei =find_all_nuclei(dapi_channel, rm_fiber)
 	num_Check = 8
 	nFibers = rm_fiber.getCount()
 	xFib, yFib = getCentroidPositions(rm_fiber)
@@ -167,7 +154,7 @@ if __name__ == "__main__":
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	
 	percReductions = [float(a)/10 for a in range(0, 10, 1)]
-	num_central, all_reduced, central_fibers, rm_fiber = repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, rm_central, xNuc, yNuc, xFib, yFib, draw=None)
+	num_central, all_reduced, central_fibers, rm_fiber = repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None)
 	
 	rm_fiber.close()
 	# rm_central.close()

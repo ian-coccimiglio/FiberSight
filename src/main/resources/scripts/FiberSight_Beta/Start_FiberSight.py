@@ -36,7 +36,7 @@ if __name__ in ['__builtin__','__main__']:
 	IJ.log("\\Clear")
 	try:
 		if fs.close_control.terminated:
-			WM.getWindow("Log").close()
+			WM.getWindow("Log").close() 
 			sys.exit(0)
 	except Exception as e:
 		IJ.log("Error during cleanup: {}".format(e))
@@ -92,21 +92,14 @@ if __name__ in ['__builtin__','__main__']:
 
 	if analysis.CN:
 		roiArray, rm_nuclei = find_all_nuclei(analysis.dapi_channel, analysis.rm_fiber)
-		
-		cn_merge.hide()
 
 		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = ANALYSIS_CONFIG["num_nuclei_check"], imp=analysis.cn_merge)
 		results_dict["Peripheral Nuclei"] = determine_number_peripheral(results_dict["Central Nuclei"], results_dict["Total Nuclei"])
 		for label in range(rm_central.getCount()):
 			rm_central.rename(label, str(results_dict["Central Nuclei"][label]))
-		IJ.run(cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
 		rm_central.close()
 		rm_nuclei = create_roi_manager_from_ROIs(roiArray)	
 
-#	analysis.imp.show()
-#	analysis.rm_fiber.runCommand("Show All")
-#	analysis.imp.setRoi(analysis.drawn_border_roi)
-	
 	if analysis.FT:
 		assess_hybrid = fs.get_ft_hybrid()
 		image_correction = "pseudo_flat_field" if fs.get_flat_field() else None
@@ -152,4 +145,9 @@ if __name__ in ['__builtin__','__main__']:
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	analysis.save_results()
-	analysis.create_figures()
+	analysis.create_figures(rm_central.getRoisAsArray())
+	
+#	analysis.imp.show()
+#	analysis.rm_fiber.runCommand("Show All")
+#	analysis.imp.setRoi(analysis.drawn_border_roi)
+	
