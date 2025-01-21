@@ -9,6 +9,7 @@ from java.io import File
 from image_formatting import ImageStandardizer
 from ij.plugin import ChannelSplitter, RoiEnlarger, LutLoader
 from file_naming import FileNamer
+from central_nucleation import show_rois
 
 class AnalysisSetup:
 	
@@ -56,7 +57,12 @@ class AnalysisSetup:
 		self.ft_sigma_blur=ft_sigma_blur
 		self.border_channel, self.dapi_channel, self.ft_channels = self.rename_channels() # Renames channels according
 		if self.border_channel is not None and self.dapi_channel is not None:
-			self.cn_merge = mergeChannels([analysis.border_channel, analysis.dapi_channel], "CN_Merge")
+			self.cn_merge = mergeChannels([self.border_channel, self.dapi_channel], "CN_Merge")
+			IJ.run(self.cn_merge, "Magenta", "");
+			self.cn_merge.setPosition(2)
+			IJ.run(self.cn_merge, "Blue", "");
+		else:
+			self.cn_merge = None
 		self.Morph, self.CN, self.FT = self.assign_analyses()
 		self.drawn_border_roi = self.get_manual_border()
 	
@@ -91,18 +97,14 @@ class AnalysisSetup:
 			pass # Morphology image
 	
 		if self.CN:
-			IJ.run(cn_merge, "Magenta", "");
-			cn_merge.setPosition(2)
-			IJ.run(cn_merge, "Blue", "");
-			cn_merge = cn_merge.flatten()
-			show_rois(cn_merge, central_rois.getRoisAsArray())
-			
-			self.border_channel.hide()
-			self.dapi_channel.hide()
-			flat_CN_image = CN_image.flatten()
+			self.cn_merge = self.cn_merge.flatten()
+			self.cn_merge.show()
+			show_rois(self.cn_merge, central_rois)
+			IJ.run(self.cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
+
+			flat_CN_image = self.cn_merge.flatten()
 			CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
 			IJ.saveAs(flat_CN_image, "Jpg", CN_path)
-			CN_image.hide()
 			
 	#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
 	#		gradient_nucleation_path = os.path.join(self.namer.figures_dir, "{}_gradient_nucleation".format(self.namer.base_name))
