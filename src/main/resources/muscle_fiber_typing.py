@@ -221,7 +221,7 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 
 	IJ.run("Clear Results", "")
 	channel_dup.setTitle(channel_dup.title.split('_')[1].replace(' ', '-'))
-
+	rm_fiber.runCommand("Show None")
 	return fiber_type_frac, channel_dup
 	
 def generate_ft_results(multichannel_dict, ch_list, T1_hybrid=False, T2_hybrid=False, T3_hybrid=False, prop_threshold = 50):
