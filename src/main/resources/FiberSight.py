@@ -7,7 +7,8 @@ from java.awt.event import ActionListener, WindowAdapter
 from javax.swing.event import ChangeListener
 from java.awt import Image
 from ij.io import OpenDialog
-import sys
+from ij import IJ
+import sys, os
 
 class FiberSight(WindowAdapter):
     CHANNEL_OPTIONS = ["Fiber Border", "DAPI", "Type I", "Type IIa", "Type IIx", "Type IIb", "None"]
@@ -15,12 +16,13 @@ class FiberSight(WindowAdapter):
     EXPECTED_ROI_FORMATS = ('.roi', '.zip')
     STRING_IMAGE_FORMATS = ', '.join([x for x in EXPECTED_IMAGE_FORMATS])
     STRING_ROI_FORMATS = ', '.join([x for x in EXPECTED_ROI_FORMATS])
-    def __init__(self, input_image_path=None, input_roi_path=None):
+    def __init__(self, input_image_path=None, input_roi_path=None, channel_list=None):
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/data/results_smallCompositeCalibrated/FS_icon.png").getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT))
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/fs_Icon_right.png").getImage().getScaledInstance(150, 150, Image.SCALE_DEFAULT))
         
         self.input_image_path = input_image_path
         self.input_roi_path = input_roi_path
+        self.channel_list = channel_list
         self.terminated=False
         
         self.mainFrame = JDialog(JFrame("FiberSight"), True)        
@@ -173,12 +175,23 @@ class FiberSight(WindowAdapter):
         # self.mainFrame.pack()  # Resize frame to fit new content
 
     def _addChannels(self):
-        self.channels = []
-        channels_1 = self._place_channel_dropdown(self.bottomPanel, "DAPI", 1)
-        channels_2 = self._place_channel_dropdown(self.bottomPanel, "Fiber Border", 2)
-        channels_3 = self._place_channel_dropdown(self.bottomPanel, "None", 3)
-        channels_4 = self._place_channel_dropdown(self.bottomPanel, "None", 4)
-        self.channels.extend([channels_1, channels_2, channels_3, channels_4])
+    	self.channels = []
+        if not self.channel_list:
+	        channels_1 = self._place_channel_dropdown(self.bottomPanel, "Fiber Border", 1)
+	        channels_2 = self._place_channel_dropdown(self.bottomPanel, "None", 2)
+	        channels_3 = self._place_channel_dropdown(self.bottomPanel, "None", 3)
+        	channels_4 = self._place_channel_dropdown(self.bottomPanel, "None", 4)
+        	self.channels.extend([channels_1, channels_2, channels_3, channels_4])
+
+        elif len(self.channel_list) == 4:
+        	for enum, channel in enumerate(self.channel_list):
+        		if channel in self.CHANNEL_OPTIONS:
+        			self.channels.extend([self._place_channel_dropdown(self.bottomPanel, str(channel), enum+1)])
+        		else:
+        			return None
+        else:
+        	IJ.error("Invalid list of channels")
+        	return None
         
     def _place_channel_dropdown(self, panel, selected_item, pos):
         gbc=GBC()
@@ -310,7 +323,7 @@ class FiberSight(WindowAdapter):
             
     def _start_FiberSight(self, event):
         if (self.image_field.text != ""):
-            print 'Starting FiberSight'
+            IJ.log('Starting FiberSight')
             self.mainFrame.dispose()
         else:
             self.image_field.setBackground(Color.red)
@@ -357,14 +370,14 @@ class FiberSight(WindowAdapter):
         RED = Color.red
         if (field_type == "ROI"):
             fp_field.setBackground(Color.white)
-            if fp_field.text.endswith(expectedFormats):
+            if fp_field.text.endswith(expectedFormats) and os.path.exists(fp_field.text):
                 fp_field.setBackground(VERY_LIGHT_GREEN)
             else:
                 fp_field.setBackground(RED)
                 JOptionPane().showMessageDialog(None, "ROI files end in " + ', '.join([x for x in expectedFormats]))
         elif (field_type == "Image"):
             fp_field.setBackground(Color.white)
-            if fp_field.text.endswith(expectedFormats):
+            if fp_field.text.endswith(expectedFormats) and os.path.exists(fp_field.text):
                 fp_field.setBackground(VERY_LIGHT_GREEN)
             else:
                 fp_field.setBackground(YELLOW)
