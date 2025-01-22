@@ -27,23 +27,21 @@ def create_roi_manager_from_ROIs(roiArray, imp=None):
 	return rm
 
 def setup_experiment(image_path, channel_list):
-	os.path.expanduser("~")
+	home_path = os.path.expanduser("~")
 	exp = {"image_path": os.path.join(home_path, image_path), "channel_list": channel_list}
 	return exp
 
 exp1 = setup_experiment("data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif", ["DAPI", "Fiber Border", "None", "None"])
-exp2 = setup_experiment("Documents/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-exp3 = setup_experiment("Documents/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_hs_cw.tif", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+exp2 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
+exp3 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_hs_cw.tif", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+exp4 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_psr/raw/PSR_crop_w55.tif", ["Fiber Border", "None", "None", "None"])
+exp5 = setup_experiment("data/test_Experiments/Experiment_5_FT/raw/pos.con.6.autoexps.nd2", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
 	
-	exp_1[path] = "data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif"
-	exp_1[ch] = ["DAPI", "Fiber Border", "None", "None"]
-	image_path = os.path.join(home_path, )
-	image_path2 = os.path.join(home_path, )
-	
-	fs = FiberSight(input_image_path=image_path2, channel_list=["DAPI", "Type I", "Type IIa", "Fiber Border"]) # Opens FiberSight
+	fs = FiberSight(input_image_path=exp5["image_path"], channel_list=exp5["channel_list"]) # Opens FiberSight
 	IJ.log("\\Clear")
 	try:
 		if fs.close_control.terminated:
@@ -72,6 +70,7 @@ if __name__ in ['__builtin__','__main__']:
 	results_dict = {}
 	run_cellpose = analysis.rm_fiber is None or fs.get_overwrite_button()
 	central_rois = None
+	identified_fiber_types = None
 	
 	if run_cellpose:
 		IJ.log("### Running Cellpose ###")
@@ -166,7 +165,7 @@ if __name__ in ['__builtin__','__main__']:
 
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	analysis.save_results()
-	analysis.create_figures(central_rois)
+	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types)
 	
 #	analysis.imp.show()
 #	analysis.rm_fiber.runCommand("Show All")

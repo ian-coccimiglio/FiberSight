@@ -106,7 +106,7 @@ for raw_image_name, fiber_roi_name in matched_files:
 			IJ.log("Saving channel mask: {}".format(channel_dup.title))
 			ft_mask_path = os.path.join(masks_dir, analysis.namer.base_name)
 			IJ.saveAs(channel_dup, "Png", ft_mask_path+"_"+channel_dup.title+"_"+"Otsu")
-	
+
 	if analysis.CN:
 		results_dict["Central Nuclei"], results_dict["Total Nuclei"] = determine_central_nucleation(analysis.dapi_channel)
 		results_dict["Peripheral Nuclei"] = determine_number_peripheral(count_central, count_nuclei)
