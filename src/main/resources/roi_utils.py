@@ -58,7 +58,7 @@ def R2L(image, rois=None):
 	width = image.getWidth()
 	height = image.getHeight()
 	depth = image.getNSlices()
-	output_bit_depth = 8
+	output_bit_depth = 16
 	label_imp = IJ.createImage("Label Image", width, height, depth, output_bit_depth)
 	for enum, roi in enumerate(rois):
 		label_imp.getProcessor().setValue(enum+1)
