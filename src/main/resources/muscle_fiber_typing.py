@@ -191,7 +191,6 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 	IJ.log("### Processing channel {} ###".format(channel.title))
 	channel_dup = channel.duplicate()
 	
-	# IJ.selectWindow(channel.title)
 	rm_fiber.runCommand("Show All")
 	if drawn_border_roi is not None:
 		channel_dup.setRoi(drawn_border_roi)
@@ -211,7 +210,7 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 	# IJ.setRawThreshold(channel_dup, 200, 65535)
 	
 	IJ.setAutoThreshold(channel_dup, "{} dark no-reset".format(threshold_method));
-	#channel_dup.show()
+	channel_dup.show()
 	Prefs.blackBackground = True
 	IJ.run(channel_dup, "Convert to Mask", "");
 	IJ.run(channel_dup, "Despeckle", "")

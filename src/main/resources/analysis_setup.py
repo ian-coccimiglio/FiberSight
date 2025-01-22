@@ -61,6 +61,7 @@ class AnalysisSetup:
 			IJ.run(self.cn_merge, "Magenta", "");
 			self.cn_merge.setPosition(2)
 			IJ.run(self.cn_merge, "Blue", "");
+			self.cn_merge.hide()
 		else:
 			self.cn_merge = None
 		self.Morph, self.CN, self.FT = self.assign_analyses()
@@ -97,15 +98,15 @@ class AnalysisSetup:
 			pass # Morphology image
 	
 		if self.CN:
-			self.cn_merge = self.cn_merge.flatten()
-			self.cn_merge.show()
-			show_rois(self.cn_merge, central_rois)
-			IJ.run(self.cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
+			self.rm_fiber.runCommand(self.cn_merge, "Show None")
+			flat_cn_merge = self.cn_merge.flatten()
+			show_rois(flat_cn_merge, central_rois)
+			IJ.run(flat_cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
 
-			flat_CN_image = self.cn_merge.flatten()
+			flat_CN_image = flat_cn_merge.flatten()
 			CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
 			IJ.saveAs(flat_CN_image, "Jpg", CN_path)
-			
+
 	#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
 	#		gradient_nucleation_path = os.path.join(self.namer.figures_dir, "{}_gradient_nucleation".format(self.namer.base_name))
 			#IJ.saveAs(flat_gradient_nucleation_image, "Jpg", gradient_nucleation_path)
