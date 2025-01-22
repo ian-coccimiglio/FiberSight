@@ -15,10 +15,10 @@
 	<artifactId>FiberSight_beta</artifactId>
 	<version>0.1.4</version>
 
-	<name>Fiber Sight</name>
-	<description>A Maven project packaging together FiberSight.</description>
+	<name>FiberSight</name>
+	<description>Package for FiberSight, a Fiji/ImageJ plugin.</description>
 	<url>N/A</url>
-	<inceptionYear>2017</inceptionYear>
+	<inceptionYear>2023</inceptionYear>
 	<organization>
 		<name>My Company</name>
 		<url>https://mycompany.com/</url>
