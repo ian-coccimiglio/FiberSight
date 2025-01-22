@@ -186,7 +186,7 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False
 	
 	return(ft)
 	
-def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radius=2, image_correction=None, drawn_border_roi=None):
+def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radius=2, image_correction=False, drawn_border_roi=None):
 	IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
 	IJ.log("### Processing channel {} ###".format(channel.title))
 	channel_dup = channel.duplicate()
