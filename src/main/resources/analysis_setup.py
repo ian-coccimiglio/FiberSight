@@ -51,12 +51,13 @@ class AnalysisSetup:
 		self.imp_channels = self.split_channels() # Splits the channels into respective order
 		self.imp_scale = self.imp.getCalibration().pixelWidth # microns per pixel
 		self.channel_dict = self.remap_channels()
-		self.composite_string = self.get_channel_colormap()
+		self.colormap = self.get_colormap()
 		self.check_channels()
 
 		self.ft_sigma_blur=ft_sigma_blur
 		self.border_channel, self.dapi_channel, self.ft_channels = self.rename_channels() # Renames channels according
-		if self.border_channel is not None and self.dapi_channel is not None:
+		self.Morph, self.CN, self.FT = self.assign_analyses()
+		if self.CN:
 			self.cn_merge = mergeChannels([self.border_channel, self.dapi_channel], "CN_Merge")
 			IJ.run(self.cn_merge, "Magenta", "");
 			self.cn_merge.setPosition(2)
@@ -64,7 +65,12 @@ class AnalysisSetup:
 			self.cn_merge.hide()
 		else:
 			self.cn_merge = None
-		self.Morph, self.CN, self.FT = self.assign_analyses()
+		if self.FT:
+			self.ft_merge = mergeChannels(self.imp_channels, "FT_Merge")
+			for enum, ch in enumerate(self.imp_channels):
+				self.ft_merge.setPosition(enum+1)
+				IJ.run(self.ft_merge, self.colormap[ch.title], "")
+				IJ.run(self.ft_merge, "Enhance Contrast", "saturated=0.05")
 		self.drawn_border_roi = self.get_manual_border()
 	
 	def save_results(self):
@@ -74,9 +80,11 @@ class AnalysisSetup:
 		self.namer.create_directory("results")
 		IJ.saveAs("Results", self.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
 	
-	def create_figures(self, central_rois=None):
+	def create_figures(self, central_rois=None, identified_fiber_types=None):
 		self.namer.create_directory("figures")
 		Prefs.useNamesAsLabels = True;
+		
+		# Make morphology images # 
 		if self.Morph:
 			if self.is_brightfield():
 				morphology_image = self.imp.duplicate()
@@ -89,7 +97,8 @@ class AnalysisSetup:
 			self.rm_fiber.moveRoisToOverlay(morphology_image)
 			self.rm_fiber.runCommand(morphology_image, "Show All with Labels")
 			IJ.run(morphology_image, "Labels...",  "color=red font="+str(24)+" show use bold")
-			IJ.run(morphology_image, "Magenta", "");
+			if not self.is_brightfield():
+				IJ.run(morphology_image, "Magenta", "")
 			morphology_image = morphology_image.flatten()
 			morphology_image.setRoi(self.drawn_border_roi)
 			flat_morphology_image = morphology_image.flatten()
@@ -97,6 +106,7 @@ class AnalysisSetup:
 			IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
 			pass # Morphology image
 	
+		# Make gradient and binary central nucleation images #
 		if self.CN:
 			self.rm_fiber.runCommand(self.cn_merge, "Show None")
 			flat_cn_merge = self.cn_merge.flatten()
@@ -113,8 +123,14 @@ class AnalysisSetup:
 			pass # Central-nucleation composite image
 			# Multiple erosion image with fraction as image label
 			
-		if self.FT:
-			pass # Fiber-Type composite image
+		# Make fiber-typing composite image #
+		if self.FT:	
+			for label in range(self.rm_fiber.getCount()):
+				self.rm_fiber.rename(label, identified_fiber_types[label])
+			IJ.run(self.ft_merge, "Labels...",  "color=cyan font="+str(24)+" show use bold")
+			ft_image = self.ft_merge.flatten()
+			FT_path = os.path.join(self.namer.figures_dir, "{}_fiber_typing".format(self.namer.base_name))
+			IJ.saveAs(ft_image, "Jpg", FT_path)
 	
 	def cleanup(self):
 		WM.getWindow("Log").close()
@@ -136,15 +152,16 @@ class AnalysisSetup:
 			if channel == "Fiber Border":
 				return enum+1
 	
-	def get_channel_colormap(self):
-		composite_list = []
-		cmap = {"Type IIx":"c1", "Type IIa":"c5", "DAPI":"c3", "Fiber Border":"c6", "Type I":"c7"}
-		for channel in self.all_channels:
-			if channel is not None:
-				color = cmap[channel]
-				composite_list.append("{}=[{}]".format(color, channel))
-		composite_string = " ".join(composite_list)
-		return composite_string
+	def get_colormap(self):
+		colormap = {}
+		cmap = {"Type IIb":"Green", "Type IIx":"Grays", "Type IIa":"Yellow", "DAPI":"Blue", "Fiber Border":"Magenta", "Type I":"Red"}
+		for channel_title in self.all_channels:
+			if channel_title:
+				colormap[channel_title] = cmap[channel_title]
+				# colormap.append(
+				# composite_list.append("{}=[{}]".format(color, channel))
+		# composite_string = " ".join(composite_list)
+		return colormap
 	
 	def get_fiber_rois(self, fiber_roi_path=None):
 		fiber_roi_path = self.namer.fiber_roi_path if fiber_roi_path is None else fiber_roi_path
@@ -189,9 +206,9 @@ class AnalysisSetup:
 		"""
 		Chooses analyses to execute according to the available channels
 		"""
-		Morph = self.border_channel is not None
-		CN = self.dapi_channel is not None
-		FT = any(self.ft_channels)
+		Morph = True if self.border_channel else False
+		CN = True if self.border_channel and self.dapi_channel else False
+		FT = True if self.border_channel and any(self.ft_channels) else False
 		return Morph, CN, FT
 		
 	def get_channel_index(self, channel_name):
