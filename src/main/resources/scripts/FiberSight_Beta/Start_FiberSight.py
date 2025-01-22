@@ -51,33 +51,36 @@ if __name__ in ['__builtin__','__main__']:
 		IJ.log("Error during cleanup: {}".format(e))
 		sys.exit(1)
 	
+	im_path = fs.get_image_path()
+	roi_path = fs.get_roi_path()
+	channels = [fs.get_channel(channel_idx) for channel_idx in range(len(fs.channels))]
+	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
+	
 	ANALYSIS_CONFIG = {
 		"min_fiber_size": 10,
 		"prop_threshold": 50,
 		"num_nuclei_check": 8,
-		"blur_radius": 4
+		"blur_radius": 4,
+		"assess_hybrid": fs.get_ft_hybrid(),
+		"image_correction": fs.get_flat_field(),
+		"threshold_method": fs.get_threshold_method(),
+		"remove_small_fibers": fs.get_remove_small(),
+		"run_cellpose": analysis.rm_fiber is None or fs.get_overwrite_button(),
+		"cellpose_model": fs.get_cellpose_model(),
+		"cellpose_diam": fs.get_cellpose_diameter(),
+		"remove_fibers_outside_border": analysis.drawn_border_roi is not None
 	}
 	
-	im_path = fs.get_image_path()
-	roi_path = fs.get_roi_path()
-	channels = [fs.get_channel(channel_idx) for channel_idx in range(len(fs.channels))]
-	cellpose_diam = fs.get_cellpose_diameter()
-	cellpose_model = fs.get_cellpose_model()
-	remove_small_fibers = fs.get_remove_small()
-	
-	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
-	remove_fibers_outside_border = analysis.drawn_border_roi is not None
 	results_dict = {}
-	run_cellpose = analysis.rm_fiber is None or fs.get_overwrite_button()
 	central_rois = None
 	identified_fiber_types = None
 	
-	if run_cellpose:
+	if ANALYSIS_CONFIG["run_cellpose"]:
 		IJ.log("### Running Cellpose ###")
 		save_rois="True"
 		seg_chan = 0 if analysis.is_brightfield() else analysis.get_fiber_border_channel_position()
 		imp_dup = analysis.imp.duplicate()
-		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, cellpose_diam, cellpose_model, save_rois, seg_chan)
+		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, ANALYSIS_CONFIG["cellpose_diam"], ANALYSIS_CONFIG["cellpose_model"], save_rois, seg_chan)
 		IJ.run(imp_dup, "Cellpose Image",image_string)
 		analysis.rm_fiber = RoiManager().getRoiManager()
 		imp_dup.close()
@@ -90,10 +93,10 @@ if __name__ in ['__builtin__','__main__']:
 		IJ.log("### Using previously generated fiber segmentations ###")
 		IJ.log("Fibers loaded from: {}".format(analysis.namer.fiber_roi_path))
 
-	if remove_small_fibers:
+	if ANALYSIS_CONFIG["remove_small_fibers"]:
 		analysis.rm_fiber = remove_small_rois(analysis.rm_fiber, analysis.imp, ANALYSIS_CONFIG["min_fiber_size"])
 
-	if remove_fibers_outside_border:
+	if ANALYSIS_CONFIG["remove_fibers_outside_border"]:
 		IJ.log("### Loading Previously Generated Manual Border ###")
 		IJ.log("Loading manual border from {}".format(analysis.namer.border_path))
 		fiber_rois = analysis.rm_fiber.getRoisAsArray()
@@ -119,21 +122,17 @@ if __name__ in ['__builtin__','__main__']:
 		# rm_nuclei = create_roi_manager_from_ROIs(roiArray)
 		
 	if analysis.FT:
-		assess_hybrid = fs.get_ft_hybrid()
-		image_correction = "pseudo_flat_field" if fs.get_flat_field() else None
-		threshold_method = fs.get_threshold_method()
-
 		area_frac = OrderedDict()
 		analysis.namer.create_directory("masks")
 		for channel in analysis.ft_channels:
 			ch_title = channel.getTitle()
 			a = analysis.rm_fiber
 			area_frac["{}_%-Area".format(ch_title)], channel_dup = fiber_type_channel(channel,  \\
-			analysis.rm_fiber, blur_radius=ANALYSIS_CONFIG["blur_radius"], threshold_method=threshold_method, \\
-			image_correction=image_correction, drawn_border_roi=analysis.drawn_border_roi)
+			analysis.rm_fiber, blur_radius=ANALYSIS_CONFIG["blur_radius"], threshold_method=ANALYSIS_CONFIG["threshold_method"], \\
+			image_correction=ANALYSIS_CONFIG["image_correction"], drawn_border_roi=analysis.drawn_border_roi)
 			channel_dup.show()
 			IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
-			ft_mask_vars = [analysis.namer.base_name, channel_dup.title, threshold_method, image_correction]
+			ft_mask_vars = [analysis.namer.base_name, channel_dup.title, ANALYSIS_CONFIG["threshold_method"], ANALYSIS_CONFIG["image_correction"]]
 			mask_filename = "_".join([str(s) for s in ft_mask_vars])
 			ft_mask_path = os.path.join(analysis.namer.masks_dir, mask_filename)
 			IJ.saveAs(channel_dup, "Png", ft_mask_path)
@@ -144,7 +143,7 @@ if __name__ in ['__builtin__','__main__']:
 	
 		ft_ch_list = [channel.title for channel in analysis.ft_channels]
 		IJ.log("### Identifying fiber types ###")
-		identified_fiber_types, areas = generate_ft_results(area_frac, ft_ch_list, T1_hybrid=assess_hybrid, T2_hybrid=assess_hybrid, T3_hybrid=assess_hybrid, prop_threshold = ANALYSIS_CONFIG["prop_threshold"])		
+		identified_fiber_types, areas = generate_ft_results(area_frac, ft_ch_list, T1_hybrid=ANALYSIS_CONFIG["assess_hybrid"], T2_hybrid=ANALYSIS_CONFIG["assess_hybrid"], T3_hybrid=ANALYSIS_CONFIG["assess_hybrid"], prop_threshold = ANALYSIS_CONFIG["prop_threshold"])		
 		results_dict["Fiber_Type"] = identified_fiber_types
 		
 		IJ.log("### Counting Fiber Types ###")
@@ -166,6 +165,7 @@ if __name__ in ['__builtin__','__main__']:
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	analysis.save_results()
 	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types)
+#	analysis.save_metadata()
 	
 #	analysis.imp.show()
 #	analysis.rm_fiber.runCommand("Show All")
