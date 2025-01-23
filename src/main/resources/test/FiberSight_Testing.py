@@ -116,7 +116,6 @@ class TestCellpose(unittest.TestCase):
 
 	def tearDown(self):
 		self.setup.imp.close()
-		# WM.getWindow("Log").close()	
 		self.setup.rm_fiber.close()
 
 class TestCellposeFluorescence(unittest.TestCase):
@@ -153,23 +152,46 @@ class TestCellposeFluorescence(unittest.TestCase):
 
 	def tearDown(self):
 		self.setup.imp.close()
-		# WM.getWindow("Log").close()	
 		self.setup.rm_fiber.close()
 
-#class TestRoiModification(unittest.TestCase):
-#	def setUp(self):
-#		# Open a non-calibrated image
-#	
-#	def test_small_uncalibrated_removal(self):
-#	
-#	def test_small_calibrated_removal(self):
-#	
-#	def test_border_removal_gpu(self):
-#	
-#	def test_border_removal_cpu(self):
-#	
-#	def tearDown(self):
-#	
+
+# TODO
+class TestFiberSight(unittest.TestCase):
+	def setUp(self):
+		self.exp1 = setup_experiment("data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif", ["DAPI", "Fiber Border", "None", "None"])
+		self.exp2 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
+		self.exp3 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_hs_cw.tif", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+		self.exp4 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_psr/raw/PSR_crop_w55.tif", ["Fiber Border", "None", "None", "None"])
+		self.exp5 = setup_experiment("data/test_Experiments/Experiment_5_FT/raw/pos.con.6.autoexps.nd2", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+
+	def test_Calibrated_Image(self):
+		pass
+	def test_Rat_Fluorescence(self):
+		pass
+	def test_Rat_Brightfield(self):
+		pass
+	def test_Human_Crop(self):
+		pass
+	def tearDown(self):
+		IJ.run("Close All")
+		closeAll()
+
+
+# TODO
+class TestRoiModification(unittest.TestCase):
+	def setUp(self):
+		# Open a non-calibrated image
+		pass
+	def test_small_uncalibrated_removal(self):
+		pass
+	def test_small_calibrated_removal(self):
+		pass
+	def test_border_removal_gpu(self):
+		pass
+	def test_border_removal_cpu(self):
+		pass
+	def tearDown(self):
+		pass
 
 def run_tests():
 	# Create test suite
@@ -179,6 +201,9 @@ def run_tests():
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellpose))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDownloadModel))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
+#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
+#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
+	
 	
 	# Run tests and print results
 	runner = unittest.TextTestRunner(verbosity=2)
@@ -188,24 +213,3 @@ if __name__ == '__main__':
 	IJ.run("Close All")
 	closeAll()
 	run_tests()
-
-
-
-# analysis_1 = AnalysisSetup(normal_image_path, ch)
-# runCellpose()
-
-# Script tests
-# # # --- Cellpose tests --- # # #
-
-# # # --- Fiber editing tests --- # # #
-
-# # # ---  --- # # #
-
-# # # --- FiberSight tests --- # # #
-
-
-# Function tests
-
-# # # ---  --- # # #
-
-# # # ---  --- # # #
