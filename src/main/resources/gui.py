@@ -3,7 +3,7 @@ from javax.swing import JFrame, JLabel, JPanel, JButton, JRadioButton, JSpinner,
 from java.awt import GridBagConstraints as GBC, GridBagLayout, Font, Insets,\
     Color, GridLayout
 from javax.swing.border import EmptyBorder
-from java.awt.event import ActionListener, WindowAdapter
+from java.awt.event import ActionListener, WindowAdapter, ActionEvent
 from javax.swing.event import ChangeListener
 from java.awt import Image
 from ij.io import OpenDialog
@@ -16,7 +16,9 @@ class FiberSight_GUI(WindowAdapter):
     EXPECTED_ROI_FORMATS = ('.roi', '.zip')
     STRING_IMAGE_FORMATS = ', '.join([x for x in EXPECTED_IMAGE_FORMATS])
     STRING_ROI_FORMATS = ', '.join([x for x in EXPECTED_ROI_FORMATS])
-    def __init__(self, input_image_path=None, input_roi_path=None, channel_list=None):
+    CELLPOSE_MODELS = ["cyto3", "WGA_21", "PSR_9", "HE_30"]
+    
+    def __init__(self, input_image_path=None, input_roi_path=None, channel_list=None, cp_model=None, is_testing=False):
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/data/results_smallCompositeCalibrated/FS_icon.png").getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT))
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/fs_Icon_right.png").getImage().getScaledInstance(150, 150, Image.SCALE_DEFAULT))
         
@@ -49,6 +51,10 @@ class FiberSight_GUI(WindowAdapter):
         
         self.advancedPanel = self.create_advanced_panel()
         self.advancedPanel.setVisible(False)  # Hidden by default
+        
+        if cp_model:
+        	self._set_cellpose_model(cp_model)
+        
         gbc = GBC()
         
         self.mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE)
@@ -61,14 +67,23 @@ class FiberSight_GUI(WindowAdapter):
         self.close_control = self.CloseControl()
         self.mainFrame.addWindowListener(self.close_control)
         self.start_button.requestFocusInWindow()
-        self.mainFrame.visible = True
         self.mainFrame.getRootPane().setDefaultButton(self.start_button)
-
+        if is_testing:
+        	self.start_button.doClick()
+        else: 
+        	self.mainFrame.visible = True
+    def trigger_start(self):
+        """
+        Programmatically trigger the start button's action
+        """
+        for listener in self.start_button.getActionListeners():
+            listener.actionPerformed(ActionEvent(self.start_button, ActionEvent.ACTION_PERFORMED, ""))
+            
     def _addModel(self):
         model_label = JLabel("Cellpose Model")
         sep = JSeparator(SwingConstants.VERTICAL)
         
-        self.cellpose_model = JComboBox(["cyto3", "PSR_9", "HE_30", "WGA_21"])
+        self.cellpose_model = JComboBox(self.CELLPOSE_MODELS)
         self.cellpose_model.createToolTip()
         self.cellpose_model.setToolTipText("cyto3 model is the baseline model, others are finetuned")
         gbc = GBC()
@@ -175,23 +190,23 @@ class FiberSight_GUI(WindowAdapter):
         # self.mainFrame.pack()  # Resize frame to fit new content
 
     def _addChannels(self):
-    	self.channels = []
+        self.channels = []
         if not self.channel_list:
-	        channels_1 = self._place_channel_dropdown(self.bottomPanel, "Fiber Border", 1)
-	        channels_2 = self._place_channel_dropdown(self.bottomPanel, "None", 2)
-	        channels_3 = self._place_channel_dropdown(self.bottomPanel, "None", 3)
-        	channels_4 = self._place_channel_dropdown(self.bottomPanel, "None", 4)
-        	self.channels.extend([channels_1, channels_2, channels_3, channels_4])
+            channels_1 = self._place_channel_dropdown(self.bottomPanel, "Fiber Border", 1)
+            channels_2 = self._place_channel_dropdown(self.bottomPanel, "None", 2)
+            channels_3 = self._place_channel_dropdown(self.bottomPanel, "None", 3)
+            channels_4 = self._place_channel_dropdown(self.bottomPanel, "None", 4)
+            self.channels.extend([channels_1, channels_2, channels_3, channels_4])
 
         elif len(self.channel_list) == 4:
-        	for enum, channel in enumerate(self.channel_list):
-        		if channel in self.CHANNEL_OPTIONS:
-        			self.channels.extend([self._place_channel_dropdown(self.bottomPanel, str(channel), enum+1)])
-        		else:
-        			return None
+            for enum, channel in enumerate(self.channel_list):
+                if channel in self.CHANNEL_OPTIONS:
+                    self.channels.extend([self._place_channel_dropdown(self.bottomPanel, str(channel), enum+1)])
+                else:
+                    return None
         else:
-        	IJ.error("Invalid list of channels")
-        	return None
+            IJ.error("Invalid list of channels")
+            return None
         
     def _place_channel_dropdown(self, panel, selected_item, pos):
         gbc=GBC()
@@ -215,6 +230,13 @@ class FiberSight_GUI(WindowAdapter):
     def _set_roi_path(self, path, fp_field, field_type, expectedFormats):
         self.roi_field.setText(path)
         self._validate_file_path(fp_field, field_type, expectedFormats)
+        
+    def _set_cellpose_model(self, cp_model):
+    	if cp_model not in self.CELLPOSE_MODELS:
+    		IJ.error("Model {} not in presets, keeping default".format(cp_model))
+    		return None
+    	else:
+        	self.cellpose_model.setSelectedItem(cp_model)
 
     def _addStart(self):
         self.start_button = JButton("Start FiberSight", actionPerformed=self._start_FiberSight)
@@ -442,4 +464,4 @@ class FiberSight_GUI(WindowAdapter):
             event.getSource().dispose() # close the JFrame
 
 if (__name__ == '__main__'):
-    fs = FiberSight()
+    fs = FiberSight_GUI(cp_model="WGA_21")
