@@ -10,7 +10,7 @@ from ij.io import OpenDialog
 from ij import IJ
 import sys, os
 
-class FiberSight(WindowAdapter):
+class FiberSight_GUI(WindowAdapter):
     CHANNEL_OPTIONS = ["Fiber Border", "DAPI", "Type I", "Type IIa", "Type IIx", "Type IIb", "None"]
     EXPECTED_IMAGE_FORMATS = ('.nd2','.czi','.tif','.tiff','.png')
     EXPECTED_ROI_FORMATS = ('.roi', '.zip')
