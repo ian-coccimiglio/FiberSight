@@ -15,6 +15,7 @@ from javax.swing import JToggleButton
 from java.io import File
 from utilities import download_model
 from loci.formats import ChannelSeparator
+from time import sleep
 
 class CZIopener:
 	def __init__(self, file_path):
@@ -401,7 +402,9 @@ def runCellpose(image,
 	return cellpose_str
 		
 def pickImage(image):
+	sleep(0.1)
 	IJ.selectWindow(image)
+	sleep(0.1)
 	return IJ.getImage()
 
 def getMyosightParameters():
