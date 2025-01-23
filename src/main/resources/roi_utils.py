@@ -14,6 +14,15 @@ import sys
 from jarray import zeros
 from jy_tools import attrs
 
+def create_roi_manager_from_ROIs(roiArray, imp=None):
+	"""
+	Creates an ROI manager from an array of ROIs. This function helps with performing tasks that require juggling ROI managers.
+	"""
+	rm = RoiManager().getRoiManager()
+	for enum, roi in enumerate(roiArray):
+		rm.add(imp, roi, enum)
+	return rm
+
 def read_rois(roi_path):
 	"""
 	Reads ROIs from .zip and .roi files, and returns a list of ROIs.

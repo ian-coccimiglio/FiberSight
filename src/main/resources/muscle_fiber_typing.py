@@ -185,7 +185,7 @@ def determine_fiber_type(fiber_type_keys, perc, T1_hybrid=False, T2_hybrid=False
 	ft = choose_fiber(positively_marked, T1_hybrid, T2_hybrid, T3_hybrid)
 	
 	return(ft)
-	
+
 def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radius=2, image_correction=False, drawn_border_roi=None):
 	IJ.run("Set Measurements...", "area area_fraction display add redirect=None decimal=3");
 	IJ.log("### Processing channel {} ###".format(channel.title))
@@ -202,6 +202,7 @@ def fiber_type_channel(channel, rm_fiber, threshold_method="Default", blur_radiu
 		rolling_ball_radius=50
 		IJ.run(channel_dup, "Subtract Background...", "rolling={}".format(rolling_ball_radius))
 	elif image_correction == "pseudo_flat_field":
+		IJ.log("### Flat-field correction ###")
 		ft_flat_blurring=100
 		IJ.run(channel_dup, "Pseudo flat field correction", "blurring={} hide".format(ft_flat_blurring))
 	else:
