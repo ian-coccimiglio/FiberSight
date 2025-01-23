@@ -71,6 +71,9 @@ class AnalysisSetup:
 				self.ft_merge.setPosition(enum+1)
 				IJ.run(self.ft_merge, self.colormap[ch.title], "")
 				IJ.run(self.ft_merge, "Enhance Contrast", "saturated=0.05")
+			self.ft_merge.hide()
+		else:
+			self.ft_merge = None
 		self.drawn_border_roi = self.get_manual_border()
 	
 	def save_results(self):
@@ -127,6 +130,7 @@ class AnalysisSetup:
 		if self.FT:	
 			for label in range(self.rm_fiber.getCount()):
 				self.rm_fiber.rename(label, identified_fiber_types[label])
+			self.rm_fiber.moveRoisToOverlay(self.ft_merge)
 			IJ.run(self.ft_merge, "Labels...",  "color=cyan font="+str(24)+" show use bold")
 			ft_image = self.ft_merge.flatten()
 			FT_path = os.path.join(self.namer.figures_dir, "{}_fiber_typing".format(self.namer.base_name))

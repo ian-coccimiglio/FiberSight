@@ -54,7 +54,11 @@ class FileNamer:
 			pass
 		else:
 			make_directories(self.experiment_dir, self.DIRECTORIES[directory])
-	
+			
+	def get_constructed_path(self, in_dir, concat_list):
+		constructed_path = os.path.join(self.get_directory(in_dir), "_".join([str(s) for s in concat_list]))
+		return constructed_path
+		
 	def validate_structure(self):
 		if not os.path.exists(self.image_dir):
 			raise ValueError("Missing required image directory")
