@@ -379,18 +379,20 @@ def runCellpose(image,
 	
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
 		try:
+			model_name = os.path.basename(model_path)
 			if not model_path:
 				model="cyto3"
-			if os.path.exists(model_path) and os.path.basename(model_path) != "cyto3":
+			if os.path.exists(model_path) and model_name != "cyto3":
 				model=""
-			elif os.path.basename(model_path) == "cyto3":
+			elif model_name == "cyto3":
 				model="cyto3"
 			else:
-				model_path = download_model(os.path.basename(model_path))
+				model_path = download_model(model_name)
 				if not model_path:
 					return False
 				model=""
 			cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model, model_path, diameter, ch1, ch2, additional_flags)
+			IJ.log("Running Cellpose model: {}".format(model_name))
 			IJ.run(image, "Cellpose ...", cellpose_str)
 
 		except Exception as e:

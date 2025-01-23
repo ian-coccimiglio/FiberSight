@@ -17,23 +17,14 @@ from roi_utils import read_rois
 from time import sleep
 reload_modules()
 
-def setup_experiment(image_path, channel_list):
-	home_path = os.path.expanduser("~")
-	exp = {"image_path": os.path.join(home_path, image_path), "channel_list": channel_list}
-	return exp
-
 def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correction):
 	IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
 	correction_suffix = "pff" if image_correction == "pseudo_flat_field" else "nc"
 	ft_mask_path = analysis.namer.get_constructed_path("masks", [analysis.namer.base_name, channel_dup.title, threshold_method, correction_suffix])
 	IJ.saveAs(channel_dup, "Png", ft_mask_path)
-
-def setup_experiment(exp):
-	FiberSight(exp["image_path"], exp["channel_list"])
-	return True
 		
-def run_FiberSight(input_image_path=None, channel_list=None):
-	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list)
+def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_testing=False):
+	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, is_testing=is_testing)
 	try:
 		if fs.close_control.terminated:
 			return False
@@ -140,11 +131,11 @@ def run_FiberSight(input_image_path=None, channel_list=None):
 	analysis.save_results()
 	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types)
 	# analysis.save_metadata() TODO
-	return True
+	return analysis
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	IJ.log("\\Clear")
 	closeAll()
-	run_FiberSight(exp2["image_path"], exp2["channel_list"])
+	run_FiberSight()
 	
