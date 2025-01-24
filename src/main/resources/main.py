@@ -18,9 +18,8 @@ from time import sleep
 reload_modules()
 
 
-def setup_experiment(image_path, channel_list):
-	home_path = os.path.expanduser("~")
-	exp = {"image_path": os.path.join(home_path, image_path), "channel_list": channel_list}
+def setup_experiment(test_directory, image_path, channel_list):
+	exp = {"image_path": os.path.join(test_directory, image_path), "channel_list": channel_list}
 	return exp
 
 def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correction):

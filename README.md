@@ -7,8 +7,8 @@ The following three major functionalities are provided:
 3) Skeletal muscle fibertyping (Type I, IIa, IIx, IIb)
 
 # Software Requirements #
-1) FIJI version 1.54f or higher
-2) BIOP, CLIJ/CLIJ2, and MorphoLibJ plugins enabled
+1) FIJI version 1.54f or higher.
+2) BIOP, CLIJ/CLIJ2, and MorphoLibJ update sites enabled.
 3) Properly installed conda (Anaconda3, miniconda3 supported). 
 4) Conda environment called 'cellpose' with Cellpose installed in it. [Instructions Here](https://github.com/BIOP/ijl-utilities-wrappers?tab=readme-ov-file#ia2-conda-installation)
 
@@ -37,6 +37,18 @@ Notes:
 # Design #
 FiberSight can be initialized by searching for "Start FiberSight". This opens a dialog (shown below) which is used to set up the experiment and ensure the proper inputs.
 ![](assets/images/FiberSight_Launcher.png)
+
+# Outputs #
+![](assets/images/PSR_Morphology.jpeg)
+*Output morphological image, muscle fibers highlighted in red*
+
+![](assets/images/DAPI_Centronucleation.jpeg)
+*Output centronucleation image, nuclei positions indicated with red lines, region of central nucleation indicated by yellow border*
+
+![](assets/images/DAPI_Gradient_Nucleation.jpeg)
+*Output gradient nucleation image. Increasing red: More centrally nucleated. Increasing green: More peripherally nucleated. 
+
+![](assets/images/Fiber_Typing.jpeg)
 
 FiberSight then executes a series of operations to determine each skeletal muscle fiber's morphology, nucleation state, and/or fiber type. Roughly, the following steps are taken in this order:
 1) Opens the input image channels and assign them accordingly
