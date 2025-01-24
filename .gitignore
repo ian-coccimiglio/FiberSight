@@ -1,9 +1,12 @@
 target/
-src/main/resources/test/
-src/main/resources/test/test_experiment_brightfield/cellpose_rois/
-src/main/resources/test/test_experiment_fluorescence/cellpose_rois/
 src/main/resources/test/test_experiment_brightfield/border_rois/
 src/main/resources/test/test_experiment_fluorescence/border_rois/
+src/main/resources/test/test_experiment_psr/border_rois/
+fiber_type_masks/
+figures/
+masks/
+cellpose_rois/
+results/
 .DS_Store
 .classpath
 .pydevproject

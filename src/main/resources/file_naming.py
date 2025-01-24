@@ -9,7 +9,11 @@ class FileNamer:
 		"masks": "_masks.png",
 		"border_exclusion": "_fibers_RoiSet.zip",
 		"manual_rois": "_fibers_RoiSet.zip",
-		"figures": "_figure.jpeg"
+		"figures": "_figure.jpeg",
+		"morph": "_morphology.jpeg",
+		"cn_cutoff": "_central_nucleation.jpeg",
+		"cn_gradient": "_gradient_nucleation.jpeg",
+		"ft_comp": "_fiber_typing.jpeg"
 		# more can be added as necessary
 	}
 	
@@ -21,7 +25,11 @@ class FileNamer:
 		"manual_rois": "manually_edited_rois",
 		"border_exclusion": "border_excluded_rois",
 		"masks": "fiber_type_masks",
-		"figures": "figures"
+		"figures": "figures",
+		"morph": "figures",
+		"cn_cutoff": "figures",
+		"cn_gradient": "figures",
+		"ft_comp": "figures"
 		# more can be added as necessary
 	}
 	
@@ -44,6 +52,10 @@ class FileNamer:
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")
 		self.manual_rois_path = self.get_path("manual_rois")
+		self.morphology_path = self.get_path("morph")
+		self.cn_path = self.get_path("cn_cutoff")
+		self.cn_gradient_path = self.get_path("cn_gradient")
+		self.ft_comp_path = self.get_path("ft_comp")
 		self.figures_path = self.get_path("figures")
 		self.masks_path = self.get_path("masks")
 		self.excluded_border_fiber_rois_path = self.get_path("border_exclusion")

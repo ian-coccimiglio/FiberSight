@@ -9,17 +9,13 @@ from analysis_setup import AnalysisSetup  # adjust imports as needed
 from jy_tools import reload_modules, closeAll, test_Results, match_files
 from image_tools import runCellpose, read_image
 from utilities import download_model, get_model_path
-from Start_FiberSight import run_FiberSight
+from main import run_FiberSight, setup_experiment
 from roi_utils import read_rois
+
 reload_modules()
 
 src_file_path = inspect.getfile(lambda: None) # works instead of __file__ in jython
 test_directory = os.path.dirname(src_file_path)
-
-def setup_experiment(image_path, channel_list):
-	home_path = os.path.expanduser("~")
-	exp = {"image_path": os.path.join(home_path, image_path), "channel_list": channel_list}
-	return exp
 
 class TestFileNamer(unittest.TestCase):
 	def setUp(self):
@@ -164,6 +160,12 @@ class TestCellposeFluorescence(unittest.TestCase):
 
 # TODO
 class TestFiberSight(unittest.TestCase):
+	def _check_paths(self, analysis):
+		self.assertTrue(analysis.namer.validate_structure)
+		self.assertTrue(os.path.exists(analysis.namer.results_path))
+		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
+		
 	def setUp(self):
 		self.exp1 = setup_experiment("data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif", ["DAPI", "Fiber Border", "None", "None"])
 		self.exp2 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
@@ -179,9 +181,7 @@ class TestFiberSight(unittest.TestCase):
 		self.assertTrue(analysis.Morph)
 		self.assertTrue(analysis.CN)
 		self.assertFalse(analysis.FT)
-		self.assertTrue(analysis.namer.validate_structure)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self._check_paths(analysis)
 		
 	def test_Rat_Fluorescence(self):
 		if not os.path.exists(self.exp2["image_path"]):
@@ -190,9 +190,7 @@ class TestFiberSight(unittest.TestCase):
 		self.assertTrue(analysis.Morph)
 		self.assertTrue(analysis.CN)
 		self.assertTrue(analysis.FT)
-		self.assertTrue(analysis.namer.validate_structure)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self._check_paths(analysis)
 
 	def test_Rat_Brightfield(self):
 		if not os.path.exists(self.exp3["image_path"]):
@@ -201,9 +199,7 @@ class TestFiberSight(unittest.TestCase):
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertFalse(analysis.FT)
-		self.assertTrue(analysis.namer.validate_structure)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self._check_paths(analysis)
 
 	def test_Human_Crop(self):
 		if not os.path.exists(self.exp4["image_path"]):
@@ -212,9 +208,7 @@ class TestFiberSight(unittest.TestCase):
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertTrue(analysis.FT)
-		self.assertTrue(analysis.namer.validate_structure)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self._check_paths(analysis)
 
 	def test_Human_Full(self):
 		if not os.path.exists(self.exp5["image_path"]):
@@ -223,32 +217,15 @@ class TestFiberSight(unittest.TestCase):
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertTrue(analysis.FT)
-		self.assertTrue(analysis.namer.validate_structure)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
+		self._check_paths(analysis)
 	
 	def test_Cpose_Models(self):
 		if not os.path.exists(self.exp6["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model="cyto3", is_testing=True)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
-		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
-		
-		analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model="PSR_9", is_testing=True)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
-		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
-		
-		analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model="WGA_21", is_testing=True)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
-		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
-		
-		analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model="HE_30", is_testing=True)
-		self.assertTrue(os.path.exists(analysis.namer.results_path))
-		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
-		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
+			
+		for model in ["cyto3", "PSR_9", "WGA_21", "HE_30"]:
+			analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model="cyto3", is_testing=True)
+			self._check_paths(analysis)
 
 	def tearDown(self):
 		IJ.run("Close All")

@@ -40,7 +40,7 @@ def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8, imp=None):
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	all_reduced = []
 	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=imp)
-	return count_central, count_nuclei, rm_central
+	return count_central, count_nuclei, rm_central, xFib, yFib, xNuc, yNuc, nearestNucleiFibers
 
 def determine_number_peripheral(count_central, count_nuclei):
 	peripheral_dict = {}
@@ -88,7 +88,7 @@ def single_erosion(rm_fiber, percent, all_reduced, nearestNucleiFibers, xNuc, yN
 	count_central = findInNearestFibers(nearestNucleiFibers, rm_central, xNuc, yNuc, xFib=xFib, yFib=yFib, imp=imp)
 	return count_central, relative_reduced_area, rm_central
 
-def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None):
+def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib):
 	num_central = []
 	all_reduced = []
 	
@@ -108,9 +108,9 @@ def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, 
 		central_fibers_index = [count_central[c] >= 1 for c in count_central]
 		central_fibers[percent] = [c for c, i in zip(count_central.keys(), central_fibers_index) if i]
 		
-	return(num_central, all_reduced, central_fibers, rm_fiber)
+	return(num_central, all_reduced, central_fibers)
 
-def fill_color_rois(central_fibers, percReductions, rm_fiber):
+def fill_color_rois(central_fibers, percReductions, fiber_rois):
 	# Set differences:
 	for percent in percReductions:
 		if percent != 0.9:
@@ -119,12 +119,12 @@ def fill_color_rois(central_fibers, percReductions, rm_fiber):
 			color_fibers = set(central_fibers[percent])
 		
 		color= Color(255-int((1-percent)*255), int((1-percent)*255), 0)
-		for enum, c_roi in enumerate(rm_fiber):
+		for enum, c_roi in enumerate(fiber_rois):
 			if enum in color_fibers:
 				roiRecolor(c_roi, color)
 	
-	for non_peripheral in set(range(rm_fiber.getCount()))-set(central_fibers[0.0]):
-		roiRecolor(rm_fiber.getRoi(non_peripheral), Color.BLACK)
+	for non_peripheral in set(range(len(fiber_rois)))-set(central_fibers[0.0]):
+		roiRecolor(fiber_rois[non_peripheral], Color.BLACK)
 
 if __name__ == "__main__":
 	main_dir = "/home/ian/data/test_Experiments/Experiment_4_Central_Nuc/"
@@ -145,16 +145,16 @@ if __name__ == "__main__":
 	# unitType = watershedParticles(DAPI.title)
 	
 	# Nuclei determination
-	roiArray, rm_nuclei =find_all_nuclei(dapi_channel, rm_fiber)
+	roiArray, rm_nuclei =find_all_nuclei(DAPI, rm_fiber)
 	num_Check = 8
 	nFibers = rm_fiber.getCount()
 	xFib, yFib = getCentroidPositions(rm_fiber)
 	xNuc, yNuc = getCentroidPositions(rm_nuclei)
-	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, newRM, num_Check)
+	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	
 	percReductions = [float(a)/10 for a in range(0, 10, 1)]
-	num_central, all_reduced, central_fibers, rm_fiber = repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=None)
+	num_central, all_reduced, central_fibers = repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib)
 	
 	rm_fiber.close()
 	# rm_central.close()
