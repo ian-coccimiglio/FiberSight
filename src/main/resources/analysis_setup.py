@@ -9,8 +9,8 @@ from java.io import File
 from image_formatting import ImageStandardizer
 from ij.plugin import ChannelSplitter, RoiEnlarger, LutLoader
 from file_naming import FileNamer
-from central_nucleation import show_rois
-
+from central_nucleation import show_rois, fill_color_rois
+from java.awt import Color
 class AnalysisSetup:
 	
 	CHANNEL_NAMES = {
@@ -75,7 +75,13 @@ class AnalysisSetup:
 		else:
 			self.ft_merge = None
 		self.drawn_border_roi = self.get_manual_border()
-	
+		
+	def reset_rois(self):
+		for roi in self.rm_fiber.getRoisAsArray():
+			roi.setFillColor(None)
+			roi.setStrokeColor(Color.yellow)
+			roi.setStrokeWidth(2)
+			
 	def save_results(self):
 		"""
 		Creates a directory in standard location, then saves the results to it.
@@ -83,7 +89,7 @@ class AnalysisSetup:
 		self.namer.create_directory("results")
 		IJ.saveAs("Results", self.namer.results_path) if IJ.isResultsWindow() else IJ.log("Results window wasn't opened!")
 	
-	def create_figures(self, central_rois=None, identified_fiber_types=None):
+	def create_figures(self, central_rois=None, identified_fiber_types=None, central_fibers=None, percReductions=None):
 		self.namer.create_directory("figures")
 		Prefs.useNamesAsLabels = True;
 		
@@ -105,8 +111,7 @@ class AnalysisSetup:
 			morphology_image = morphology_image.flatten()
 			morphology_image.setRoi(self.drawn_border_roi)
 			flat_morphology_image = morphology_image.flatten()
-			morphology_path = os.path.join(self.namer.figures_dir, "{}_morphology".format(self.namer.base_name))
-			IJ.saveAs(flat_morphology_image, "Jpg", morphology_path)
+			IJ.saveAs(flat_morphology_image, "Jpg", self.namer.morphology_path)
 			pass # Morphology image
 	
 		# Make gradient and binary central nucleation images #
@@ -117,13 +122,14 @@ class AnalysisSetup:
 			IJ.run(flat_cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
 
 			flat_CN_image = flat_cn_merge.flatten()
-			CN_path = os.path.join(self.namer.figures_dir, "{}_central_nucleation".format(self.namer.base_name))
-			IJ.saveAs(flat_CN_image, "Jpg", CN_path)
+			IJ.saveAs(flat_CN_image, "Jpg", self.namer.cn_path)
 
-	#		flat_gradient_nucleation_image = gradient_nucleation_image.flatten()
-	#		gradient_nucleation_path = os.path.join(self.namer.figures_dir, "{}_gradient_nucleation".format(self.namer.base_name))
-			#IJ.saveAs(flat_gradient_nucleation_image, "Jpg", gradient_nucleation_path)
-			pass # Central-nucleation composite image
+			flat_gradient_nucleation_image = self.cn_merge.flatten()
+			fill_color_rois(central_fibers, percReductions, self.rm_fiber.getRoisAsArray())
+			self.rm_fiber.moveRoisToOverlay(flat_gradient_nucleation_image)
+			IJ.saveAs(flat_gradient_nucleation_image, "Jpg", self.namer.cn_gradient_path)
+			self.reset_rois()
+			# Central-nucleation composite image
 			# Multiple erosion image with fraction as image label
 			
 		# Make fiber-typing composite image #
@@ -133,8 +139,7 @@ class AnalysisSetup:
 			self.rm_fiber.moveRoisToOverlay(self.ft_merge)
 			IJ.run(self.ft_merge, "Labels...",  "color=cyan font="+str(24)+" show use bold")
 			ft_image = self.ft_merge.flatten()
-			FT_path = os.path.join(self.namer.figures_dir, "{}_fiber_typing".format(self.namer.base_name))
-			IJ.saveAs(ft_image, "Jpg", FT_path)
+			IJ.saveAs(ft_image, "Jpg", self.namer.ft_comp_path)
 	
 	def cleanup(self):
 		WM.getWindow("Log").close()
