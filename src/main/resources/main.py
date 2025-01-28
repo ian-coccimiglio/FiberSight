@@ -17,8 +17,8 @@ from roi_utils import read_rois
 from time import sleep
 reload_modules()
 
-def setup_experiment(test_directory, image_path, channel_list):
-	exp = {"image_path": os.path.join(test_directory, image_path), "channel_list": channel_list}
+def setup_experiment(image_path, channel_list):
+	exp = {"image_path": image_path, "channel_list": channel_list}
 	return exp
 
 def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correction):
@@ -27,6 +27,21 @@ def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correctio
 	ft_mask_path = analysis.namer.get_constructed_path("masks", [analysis.namer.base_name, channel_dup.title, threshold_method, correction_suffix])
 	IJ.saveAs(channel_dup, "Png", ft_mask_path)
 
+def validate_image_path(image_path):
+	valid_image_dirs = {"raw", "images", "raw_images"}
+	questionable_exp_dirs = {"desktop", "documents", "downloads", "pictures"}
+	image_dir = os.path.dirname(image_path)
+	exp_dir = os.path.dirname(image_dir)
+	image_dir_name = os.path.basename(image_dir).lower()
+	exp_dir_name = os.path.basename(exp_dir).lower()
+	if not os.path.exists(image_path):
+		return False, "Image path does not exist"
+	if image_dir_name not in valid_image_dirs:
+		return False, "Images must be in a directory named one of: {}".format(', '.join(valid_image_dirs))
+	if exp_dir_name in questionable_exp_dirs or exp_dir_name == os.path.expanduser("~"):
+		return False, "Image directory should be in a dedicated experiment directory"
+	return True, "Path validated"
+	
 def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_testing=False):
 	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, is_testing=is_testing)
 	try:
@@ -35,12 +50,20 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 	except Exception as e:
 		IJ.log("Error during cleanup: {}".format(e))
 		sys.exit(1)
-	IJ.log("\\Clear")
-		
+	IJ.log("\\Clear")	
+	
 	im_path = fs.get_image_path()
+	is_valid, message = validate_image_path(im_path)
+	if not is_valid:
+		IJ.log(message)
+		level_one = "\n|- experiment_directory (can have any name)"
+		level_two = "\n|-- 'raw' (can also be named raw_images or images)"
+		IJ.showMessage("Ensure that your input image is in the following path structure{}{}".format(level_one, level_two))
+		return False
 	roi_path = fs.get_roi_path()
 	channels = [fs.get_channel(channel_idx) for channel_idx in range(len(fs.channels))]
 	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
+	analysis.namer.validate_structure()
 	
 	ANALYSIS_CONFIG = {
 		"min_fiber_size": 10,
@@ -146,6 +169,7 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
-	exp2 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	analysis=run_FiberSight(input_image_path=exp2["image_path"], channel_list=exp2["channel_list"], is_testing=True)
-	# analysis = run_FiberSight()
+	home_dir = os.path.expanduser("~")
+	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
+	#analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
+	analysis = run_FiberSight()

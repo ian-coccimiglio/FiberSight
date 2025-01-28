@@ -16,6 +16,7 @@ reload_modules()
 
 src_file_path = inspect.getfile(lambda: None) # works instead of __file__ in jython
 test_directory = os.path.dirname(src_file_path)
+home_dir = os.path.expanduser("~")
 
 class TestFileNamer(unittest.TestCase):
 	def setUp(self):
@@ -165,13 +166,13 @@ class TestFiberSight(unittest.TestCase):
 		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
 		
 	def setUp(self):
-		self.exp1 = setup_experiment("", "data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif", ["DAPI", "Fiber Border", "None", "None"])
-		self.exp2 = setup_experiment(test_directory, "test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-		self.exp3 = setup_experiment(test_directory, "test_experiment_psr/raw/PSR_crop_w55.tif", ["Fiber Border", "None", "None", "None"])
-		self.exp4 = setup_experiment(test_directory, "test_experiment_fluorescence/raw/skm_hs_cw.tif", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
-		self.exp5 = setup_experiment("", "data/test_Experiments/Experiment_5_FT/raw/pos.con.6.autoexps.nd2", ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
-		self.exp6 = setup_experiment(test_directory, "test_cpose_models/raw/PSR patch.tif", ["Fiber Border", "None", "None", "None"])
-		self.exp7 = setup_experiment(test_directory, "test_experiment_brightfield/raw/V52_patch_1.tif", ["Fiber Border", "None", "None", "None"])
+		self.exp1 = setup_experiment(os.path.join(home_dir, "data/test_Experiments/Experiment_4_Central_Nuc/raw/smallCompositeCalibrated.tif"), ["DAPI", "Fiber Border", "None", "None"])
+		self.exp2 = setup_experiment(os.path.join(test_directory, "test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
+		self.exp3 = setup_experiment(os.path.join(test_directory, "test_experiment_psr/raw/PSR_crop_w55.tif"), ["Fiber Border", "None", "None", "None"])
+		self.exp4 = setup_experiment(os.path.join(test_directory, "test_experiment_fluorescence/raw/skm_hs_cw.tif"), ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+		self.exp5 = setup_experiment(os.path.join(home_dir, "data/test_Experiments/Experiment_5_FT/raw/pos.con.6.autoexps.nd2"), ["Type I", "Type IIa", "Type IIx", "Fiber Border"])
+		self.exp6 = setup_experiment(os.path.join(test_directory, "test_cpose_models/raw/PSR patch.tif"), ["Fiber Border", "None", "None", "None"])
+		self.exp7 = setup_experiment(os.path.join(test_directory, "test_experiment_brightfield/raw/V52_patch_1.tif"), ["Fiber Border", "None", "None", "None"])
 
 	def test_Calibrated_Image(self):
 		if not os.path.exists(self.exp1["image_path"]):
