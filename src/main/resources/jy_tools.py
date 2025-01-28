@@ -6,13 +6,74 @@ from ij.process import ImageStatistics as IS
 import sys, os
 from java.lang.System import getProperty, getProperties
 from file_naming import FileNamer
+import socket
 
-def reload_modules():
-	userLib = [x for x in sys.path if x.endswith('/jars/Lib')][0] if (IJ.isLinux() or IJ.isMacintosh()) else [x for x in sys.path if x.endswith('\\jars\\Lib')][0]
-	for mod in [x.split('$')[0] for x in os.listdir(userLib) if x.endswith('$py.class')]:
-		if mod in sys.modules.keys():
-			print("Reloading module: " + mod)
-			del(sys.modules[mod])
+def is_development_machine():
+	"""
+	Check if this is a development machine based on hostname/computer name.
+	Returns True if running on development machine, False otherwise.
+	"""
+	hostname = socket.gethostname().lower()
+	# Add your development machine's hostname(s) here
+	dev_machines = {'dev-laptop', 'ianc'}  # Add your machines here
+	return hostname in dev_machines
+
+def get_lib_path():
+	"""
+	Find the library path based on the operating system.
+	Returns string path or None if not found.
+	"""
+	lib_suffix = 'jars/Lib' if (IJ.isLinux() or IJ.isMacintosh()) else 'jars\\Lib'
+	
+	for path in sys.path:
+		if str(path).endswith(lib_suffix):
+			return path
+	
+	return None
+
+def reload_modules(force=False, verbose=False):
+	"""
+	Force reload Python modules found in the library path.
+	Only executes on development machines unless force=True.
+	
+	Args:
+		force (bool): If True, bypasses development machine check
+		verbose (bool): Whether to print reloading information
+	
+	Returns:
+		tuple: (number of modules reloaded, list of reloaded module names)
+	"""
+	if not force and not is_development_machine():
+		if verbose:
+			print("Not a development machine - skipping module reload")
+		return 0, []
+		
+	lib_path = get_lib_path()
+	if not lib_path:
+		raise RuntimeError("Library path not found in sys.path")
+	
+	if not os.path.exists(lib_path):
+		raise RuntimeError("Library path does not exist: {}".format(lib_path))
+	
+	reloaded_modules = []
+	
+	try:
+		# Find all .class files and extract module names
+		module_files = [f for f in os.listdir(lib_path) if f.endswith('$py.class')]
+		modules_to_reload = [f.split('$')[0] for f in module_files]
+		
+		# Reload each module found in sys.modules
+		for module in modules_to_reload:
+			if module in sys.modules:
+				if verbose:
+					print("Reloading module: %s" % module)
+				del sys.modules[module]
+				reloaded_modules.append(module)
+				
+		return len(reloaded_modules), reloaded_modules
+		
+	except Exception as e:
+		raise RuntimeError("Error during module reload: {}".format(str(e)))
 
 def list_files(folder):
 	'''Lists files in a folder, skipping dot files'''

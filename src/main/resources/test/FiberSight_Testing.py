@@ -173,58 +173,58 @@ class TestFiberSight(unittest.TestCase):
 		self.exp6 = setup_experiment(test_directory, "test_cpose_models/raw/PSR patch.tif", ["Fiber Border", "None", "None", "None"])
 		self.exp7 = setup_experiment(test_directory, "test_experiment_brightfield/raw/V52_patch_1.tif", ["Fiber Border", "None", "None", "None"])
 
-#	def test_Calibrated_Image(self):
-#		if not os.path.exists(self.exp1["image_path"]):
-#			self.skipTest("Path does not exist")
-#		analysis = run_FiberSight(input_image_path=self.exp1["image_path"], channel_list=self.exp1["channel_list"], is_testing=True)
-#		self.assertTrue(analysis.Morph)
-#		self.assertTrue(analysis.CN)
-#		self.assertFalse(analysis.FT)
-#		self._check_paths(analysis)
-#		
-#	def test_Rat_Fluorescence(self):
-#		if not os.path.exists(self.exp2["image_path"]):
-#			self.skipTest("Path does not exist")
-#		analysis = run_FiberSight(input_image_path=self.exp2["image_path"], channel_list=self.exp2["channel_list"], is_testing=True)
-#		self.assertTrue(analysis.Morph)
-#		self.assertTrue(analysis.CN)
-#		self.assertTrue(analysis.FT)
-#		self._check_paths(analysis)
-#
-#	def test_Rat_Brightfield(self):
-#		if not os.path.exists(self.exp3["image_path"]):
-#			self.skipTest("Path does not exist")
-#		analysis = run_FiberSight(input_image_path=self.exp3["image_path"], channel_list=self.exp3["channel_list"], is_testing=True)
-#		self.assertTrue(analysis.Morph)
-#		self.assertFalse(analysis.CN)
-#		self.assertFalse(analysis.FT)
-#		self._check_paths(analysis)
-#
-#	def test_Human_Crop(self):
-#		if not os.path.exists(self.exp4["image_path"]):
-#			self.skipTest("Path does not exist")
-#		analysis = run_FiberSight(input_image_path=self.exp4["image_path"], channel_list=self.exp4["channel_list"], is_testing=True)
-#		self.assertTrue(analysis.Morph)
-#		self.assertFalse(analysis.CN)
-#		self.assertTrue(analysis.FT)
-#		self._check_paths(analysis)
-#
-#	def test_Human_Full(self):
-#		if not os.path.exists(self.exp5["image_path"]):
-#			self.skipTest("Path does not exist")
-#		analysis = run_FiberSight(input_image_path=self.exp5["image_path"], channel_list=self.exp5["channel_list"], is_testing=True)
-#		self.assertTrue(analysis.Morph)
-#		self.assertFalse(analysis.CN)
-#		self.assertTrue(analysis.FT)
-#		self._check_paths(analysis)
-#	
-#	def test_Cpose_Models(self):
-#		if not os.path.exists(self.exp6["image_path"]):
-#			self.skipTest("Path does not exist")
-#			
-#		for model in ["cyto3", "PSR_9", "WGA_21", "HE_30"]:
-#			analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model=model, is_testing=True)
-#			self._check_paths(analysis)
+	def test_Calibrated_Image(self):
+		if not os.path.exists(self.exp1["image_path"]):
+			self.skipTest("Path does not exist")
+		analysis = run_FiberSight(input_image_path=self.exp1["image_path"], channel_list=self.exp1["channel_list"], is_testing=True)
+		self.assertTrue(analysis.Morph)
+		self.assertTrue(analysis.CN)
+		self.assertFalse(analysis.FT)
+		self._check_paths(analysis)
+		
+	def test_Rat_Fluorescence(self):
+		if not os.path.exists(self.exp2["image_path"]):
+			self.skipTest("Path does not exist")
+		analysis = run_FiberSight(input_image_path=self.exp2["image_path"], channel_list=self.exp2["channel_list"], is_testing=True)
+		self.assertTrue(analysis.Morph)
+		self.assertTrue(analysis.CN)
+		self.assertTrue(analysis.FT)
+		self._check_paths(analysis)
+
+	def test_Rat_Brightfield(self):
+		if not os.path.exists(self.exp3["image_path"]):
+			self.skipTest("Path does not exist")
+		analysis = run_FiberSight(input_image_path=self.exp3["image_path"], channel_list=self.exp3["channel_list"], is_testing=True)
+		self.assertTrue(analysis.Morph)
+		self.assertFalse(analysis.CN)
+		self.assertFalse(analysis.FT)
+		self._check_paths(analysis)
+
+	def test_Human_Crop(self):
+		if not os.path.exists(self.exp4["image_path"]):
+			self.skipTest("Path does not exist")
+		analysis = run_FiberSight(input_image_path=self.exp4["image_path"], channel_list=self.exp4["channel_list"], is_testing=True)
+		self.assertTrue(analysis.Morph)
+		self.assertFalse(analysis.CN)
+		self.assertTrue(analysis.FT)
+		self._check_paths(analysis)
+
+	def test_Human_Full(self):
+		if not os.path.exists(self.exp5["image_path"]):
+			self.skipTest("Path does not exist")
+		analysis = run_FiberSight(input_image_path=self.exp5["image_path"], channel_list=self.exp5["channel_list"], is_testing=True)
+		self.assertTrue(analysis.Morph)
+		self.assertFalse(analysis.CN)
+		self.assertTrue(analysis.FT)
+		self._check_paths(analysis)
+	
+	def test_Cpose_Models(self):
+		if not os.path.exists(self.exp6["image_path"]):
+			self.skipTest("Path does not exist")
+			
+		for model in ["cyto3", "PSR_9", "WGA_21", "HE_30"]:
+			analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model=model, is_testing=True)
+			self._check_paths(analysis)
 	
 	def test_HE_Mouse(self):
 		if not os.path.exists(self.exp7["image_path"]):
@@ -257,11 +257,11 @@ class TestRoiModification(unittest.TestCase):
 def run_tests():
 	# Create test suite
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestFileNamer)
-#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestAnalysisSetup))
-#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileNamerBad))
-#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellpose))
-#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDownloadModel))
-#	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestAnalysisSetup))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileNamerBad))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellpose))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDownloadModel))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFiberSight))
 #	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestRoiModification))
 	
