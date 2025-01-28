@@ -17,7 +17,6 @@ from roi_utils import read_rois
 from time import sleep
 reload_modules()
 
-
 def setup_experiment(test_directory, image_path, channel_list):
 	exp = {"image_path": os.path.join(test_directory, image_path), "channel_list": channel_list}
 	return exp
@@ -36,6 +35,7 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 	except Exception as e:
 		IJ.log("Error during cleanup: {}".format(e))
 		sys.exit(1)
+	IJ.log("\\Clear")
 		
 	im_path = fs.get_image_path()
 	roi_path = fs.get_roi_path()
@@ -145,7 +145,6 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
-	IJ.log("\\Clear")
 	closeAll()
 	exp2 = setup_experiment("Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif", ["DAPI", "Type I", "Type IIa", "Fiber Border"])
 	analysis=run_FiberSight(input_image_path=exp2["image_path"], channel_list=exp2["channel_list"], is_testing=True)
