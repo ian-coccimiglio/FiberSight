@@ -15,7 +15,7 @@ def is_development_machine():
 	"""
 	hostname = socket.gethostname().lower()
 	# Add your development machine's hostname(s) here
-	dev_machines = {'dev-laptop', 'ianc'}  # Add your machines here
+	dev_machines = {'ians-macbook-air.local', 'ianc'}  # Add your machines here
 	return hostname in dev_machines
 
 def get_lib_path():
@@ -62,6 +62,8 @@ def reload_modules(force=False, verbose=False):
 		module_files = [f for f in os.listdir(lib_path) if f.endswith('$py.class')]
 		modules_to_reload = [f.split('$')[0] for f in module_files]
 		
+		print modules_to_reload
+		
 		# Reload each module found in sys.modules
 		for module in modules_to_reload:
 			if module in sys.modules:
@@ -69,7 +71,6 @@ def reload_modules(force=False, verbose=False):
 					print("Reloading module: %s" % module)
 				del sys.modules[module]
 				reloaded_modules.append(module)
-				
 		return len(reloaded_modules), reloaded_modules
 		
 	except Exception as e:
