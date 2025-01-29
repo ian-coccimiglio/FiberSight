@@ -53,7 +53,7 @@ class FiberSight_GUI(WindowAdapter):
         self.advancedPanel.setVisible(False)  # Hidden by default
         
         if cp_model:
-        	self._set_cellpose_model(cp_model)
+            self._set_cellpose_model(cp_model)
         
         gbc = GBC()
         
@@ -69,9 +69,25 @@ class FiberSight_GUI(WindowAdapter):
         self.start_button.requestFocusInWindow()
         self.mainFrame.getRootPane().setDefaultButton(self.start_button)
         if is_testing:
-        	self.start_button.doClick()
+            self.start_button.doClick()
         else: 
-        	self.mainFrame.visible = True
+            self.mainFrame.visible = True
+            
+    def _validate_image_path(self, image_path):
+        valid_image_dirs = {"raw", "images", "raw_images"}
+        questionable_exp_dirs = {"desktop", "documents", "downloads", "pictures"}
+        image_dir = os.path.dirname(image_path)
+        exp_dir = os.path.dirname(image_dir)
+        image_dir_name = os.path.basename(image_dir).lower()
+        exp_dir_name = os.path.basename(exp_dir).lower()
+        if not os.path.exists(image_path):
+            return False, "Image path does not exist"
+        if image_dir_name not in valid_image_dirs:
+            return False, "Images must be in a directory named one of: {}".format(', '.join(valid_image_dirs))
+        if exp_dir_name in questionable_exp_dirs or exp_dir_name == os.path.expanduser("~"):
+            return False, "Image directory should be in a dedicated experiment directory"
+        return True, "Path validated"
+        
     def trigger_start(self):
         """
         Programmatically trigger the start button's action
@@ -232,11 +248,11 @@ class FiberSight_GUI(WindowAdapter):
         self._validate_file_path(fp_field, field_type, expectedFormats)
         
     def _set_cellpose_model(self, cp_model):
-    	if cp_model not in self.CELLPOSE_MODELS:
-    		IJ.error("Model {} not in presets, keeping default".format(cp_model))
-    		return None
-    	else:
-        	self.cellpose_model.setSelectedItem(cp_model)
+        if cp_model not in self.CELLPOSE_MODELS:
+            IJ.error("Model {} not in presets, keeping default".format(cp_model))
+            return None
+        else:
+            self.cellpose_model.setSelectedItem(cp_model)
 
     def _addStart(self):
         self.start_button = JButton("Start FiberSight", actionPerformed=self._start_FiberSight)
@@ -344,12 +360,12 @@ class FiberSight_GUI(WindowAdapter):
             gbc.gridx += 1
             
     def _start_FiberSight(self, event):
-        if (self.image_field.text != ""):
-            IJ.log('Starting FiberSight')
-            self.mainFrame.dispose()
-        else:
+        if self.image_field.text == "":
             self.image_field.setBackground(Color.red)
             JOptionPane().showMessageDialog(None, "Please enter an image file")
+        else:
+            IJ.log('Starting FiberSight')
+            self.mainFrame.dispose()
     
     def get_cellpose_model(self):
         return self.cellpose_model.getSelectedItem()
@@ -398,8 +414,22 @@ class FiberSight_GUI(WindowAdapter):
                 fp_field.setBackground(RED)
                 JOptionPane().showMessageDialog(None, "ROI files end in " + ', '.join([x for x in expectedFormats]))
         elif (field_type == "Image"):
+            is_valid, message = self._validate_image_path(fp_field.text)
+            # correction_message = "Make sure your image is placed in a dedicated path called [experiment_name]/'raw'/[image.tif]: {}{}{}".format(level_one, level_two, level_three)
+            spacer = " \n"
+            rule_1 = "\n1) You must create a dedicated folder for your experiment (call it anything)"
+            rule_2 = "\n2) You must create a subfolder called 'raw' or 'raw_images' or 'images' and place your image(s) there"
+            rule_3 = "\n2) Your image should be formatted as {}".format(', '.join([x for x in expectedFormats]))
+            level_one = "\n\n|- CSA_experiment"
+            level_two = "\n|-- 'raw' (or 'raw_images' or 'images')"
+            level_three = "\n|--- 'image.tif'"
+            press_ok = "\nIf you want to process images anyway, outputs will be created in {}.".format(os.path.dirname(os.path.dirname(fp_field.text)))
+            correction_message = "Image Path Rules:\n{}{}{}\n{}For example:{}{}{}\n{}{}".format(rule_1, rule_2, rule_3, spacer, level_one, level_two, level_three, spacer, press_ok)
             fp_field.setBackground(Color.white)
-            if fp_field.text.endswith(expectedFormats) and os.path.exists(fp_field.text):
+            if not is_valid:
+                fp_field.setBackground(YELLOW)
+                create_folder = IJ.showMessage("Fix image path", correction_message)
+            elif fp_field.text.endswith(expectedFormats) and os.path.exists(fp_field.text):
                 fp_field.setBackground(VERY_LIGHT_GREEN)
             else:
                 fp_field.setBackground(YELLOW)
