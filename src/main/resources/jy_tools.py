@@ -62,8 +62,6 @@ def reload_modules(force=False, verbose=False):
 		module_files = [f for f in os.listdir(lib_path) if f.endswith('$py.class')]
 		modules_to_reload = [f.split('$')[0] for f in module_files]
 		
-		print modules_to_reload
-		
 		# Reload each module found in sys.modules
 		for module in modules_to_reload:
 			if module in sys.modules:
