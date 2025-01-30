@@ -26,9 +26,14 @@ def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correctio
 	correction_suffix = "pff" if image_correction == "pseudo_flat_field" else "nc"
 	ft_mask_path = analysis.namer.get_constructed_path("masks", [analysis.namer.base_name, channel_dup.title, threshold_method, correction_suffix])
 	IJ.saveAs(channel_dup, "Png", ft_mask_path)
-	
+
+def updateProgress(curr_progress):
+	sleep(0.1)
+	IJ.showProgress(curr_progress)
+
 def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_testing=False):
 	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, is_testing=is_testing)
+	updateProgress(0.0)
 	try:
 		if fs.close_control.terminated:
 			return False
@@ -38,13 +43,6 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 	IJ.log("\\Clear")	
 	
 	im_path = fs.get_image_path()
-	is_valid, message = validate_image_path(im_path)
-	if not is_valid:
-		IJ.log(message)
-		level_one = "\n|- experiment_directory (can have any name)"
-		level_two = "\n|-- 'raw' (can also be named raw_images or images)"
-		IJ.showMessage("Ensure that your input image is in the following path structure{}{}".format(level_one, level_two))
-		return False
 	roi_path = fs.get_roi_path()
 	channels = [fs.get_channel(channel_idx) for channel_idx in range(len(fs.channels))]
 	analysis = AnalysisSetup(im_path, channels, fiber_roi_path=roi_path)
@@ -76,6 +74,8 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		seg_chan = 0 if analysis.is_brightfield() else analysis.get_fiber_border_channel_position()
 		imp_dup = analysis.imp.duplicate()
 		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, ANALYSIS_CONFIG["cellpose_diam"], ANALYSIS_CONFIG["cellpose_model"], save_rois, seg_chan)
+		updateProgress(0.2)
+		IJ.showStatus("Running Cellpose")
 		IJ.run(imp_dup, "Cellpose Image",image_string)
 		analysis.rm_fiber = RoiManager().getRoiManager()
 		for im_title in WM.getImageTitles():
@@ -84,9 +84,11 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		IJ.log("### Using previously generated fiber segmentations ###\nFibers loaded from: {}".format(analysis.namer.fiber_roi_path))
 
 	if ANALYSIS_CONFIG["remove_small_fibers"]:
+		updateProgress(0.35)
 		analysis.rm_fiber = remove_small_rois(analysis.rm_fiber, analysis.imp, ANALYSIS_CONFIG["min_fiber_size"])
 
 	if ANALYSIS_CONFIG["remove_fibers_outside_border"]:
+		updateProgress(0.4)
 		IJ.log("### Loading Previously Generated Manual Border ###\nLoading manual border from {}".format(analysis.namer.border_path))
 		fiber_rois = analysis.rm_fiber.getRoisAsArray()
 		edgeless, overlay_image = ROI_border_exclusion(analysis.border_channel, analysis.drawn_border_roi, fiber_rois, separate_rois=True, GPU=True)
@@ -97,9 +99,11 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		# TODO: Save these ROIs #
 
 	if analysis.Morph:
+		updateProgress(0.5)
 		results_dict["Label"], results_dict["Area"], results_dict["MinFeret"] = estimate_fiber_morphology(analysis.border_channel, analysis.imp_scale, analysis.rm_fiber)
 
 	if analysis.CN:
+		updateProgress(0.6)
 		roiArray, rm_nuclei = find_all_nuclei(analysis.dapi_channel, analysis.rm_fiber)
 		results_dict["Central Nuclei"], results_dict["Total Nuclei"], rm_central, xFib, yFib, xNuc, yNuc, nearestNucleiFibers = determine_central_nucleation(analysis.rm_fiber, rm_nuclei, num_Check = ANALYSIS_CONFIG["num_nuclei_check"], imp=analysis.cn_merge)
 		results_dict["Peripheral Nuclei"] = determine_number_peripheral(results_dict["Central Nuclei"], results_dict["Total Nuclei"])
@@ -112,6 +116,7 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		num_central, all_reduced, central_fibers = repeated_erosion(percReductions, analysis.rm_fiber, nearestNucleiFibers, xNuc, yNuc, xFib, yFib)
 		
 	if analysis.FT:
+		updateProgress(0.8)
 		area_frac = OrderedDict()
 		analysis.namer.create_directory("masks")
 		for channel in analysis.ft_channels:
@@ -145,9 +150,11 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 			channel_dup.setRoi(analysis.drawn_border_roi)
 			IJ.run(channel_dup, "Clear Outside", "")
 
+	updateProgress(0.9)
 	results = make_results(results_dict, analysis.Morph, analysis.CN, analysis.FT)
 	analysis.save_results()
 	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types, central_fibers=central_fibers, percReductions=percReductions)
+	updateProgress(1)
 	# analysis.save_metadata() TODO
 	return analysis
 
@@ -156,5 +163,5 @@ if __name__ in ['__builtin__','__main__']:
 	closeAll()
 	home_dir = os.path.expanduser("~")
 	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	#analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
+	# analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
 	analysis = run_FiberSight()
