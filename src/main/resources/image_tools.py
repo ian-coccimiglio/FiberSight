@@ -369,6 +369,7 @@ def runCellpose(image,
 	ch1=0, 
 	ch2=0):
 	
+	# IJ.showProgress(0.5)
 	if env_path is None:
 		env_path = find_cellpose_env(os.path.expanduser("~"))
 	elif not os.path.exists(env_path):
@@ -382,7 +383,7 @@ def runCellpose(image,
 			model_name = os.path.basename(model_path)
 			if not model_path:
 				model="cyto3"
-			if os.path.exists(model_path) and model_name != "cyto3":
+			elif os.path.exists(model_path) and model_name != "cyto3":
 				model=""
 			elif model_name == "cyto3":
 				model="cyto3"
