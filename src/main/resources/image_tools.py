@@ -657,10 +657,7 @@ def read_image(file_path):
 			raise ValueError("The path provided is not a file: {}".format(file_path))
 			
 		imp = Opener().openUsingBioFormats(file_path)
-		if imp != None:
-			return(imp)
-		else:
-			return Opener().openImage(file_path)
+		return imp if imp else Opener().openImage(file_path)
 	except IOError as e:
 		print("An IOError occurred: ", e)
 		return None
