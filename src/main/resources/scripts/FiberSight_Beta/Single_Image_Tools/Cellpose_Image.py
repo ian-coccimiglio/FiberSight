@@ -9,66 +9,18 @@ Runs Cellpose on a single image, and produces a set of ROIs.
 """
 
 import os
-import time
 from ij import IJ
-from ij.plugin import ChannelSplitter
-from jy_tools import reload_modules
-from image_tools import runCellpose, detectMultiChannel, convertLabelsToROIs, read_image
-from utilities import get_model_path, download_model
 from file_naming import FileNamer
+from jy_tools import closeAll, reload_modules
+from cellpose_runner import CellposeRunner
+reload_modules()
 
-def main():
-	namer = FileNamer(raw_path.path)
-	IJ.log("Raw Path: {}".format(namer.image_path))
-	model_path = get_model_path(model)
-	
-	if not os.path.exists(model_path):
-		IJ.log("Downloading model to {}".format(model_path))
-		download_model(model)
-
-	print namer.image_path
-	original_imp = read_image(namer.image_path)
-	original_imp.show()
-	
-	if detectMultiChannel(original_imp):
-		if seg_chan == 0:
-			IJ.log("Processing image in gray-scale")
-			pass # Keep image in gray-scale
-		elif seg_chan > original_imp.NChannels:
-			IJ.error("Selected segmentation channel ({}) exceeds total number of channels ({}), segmenting on gray-scale instead".format(seg_chan, original_imp.NChannels))
-			pass
-		else:
-			IJ.log("Multiple channels detected; splitting image")
-			IJ.log("Extracting and segmenting channel {}".format(seg_chan))
-			channels = ChannelSplitter.split(original_imp)
-			channels[seg_chan-1].show() # Selects the channel to segment, offset by 1 for indexing
-			original_imp.hide()
-	
-	image_to_segment = IJ.getImage()
-	IJ.log("### Running Cellpose on "+image_to_segment.title+" ###")
-	
-	start = time.time()
-	
-	runCellpose(image_to_segment, model_path = model_path, env_type = "conda", diameter=cellpose_diam, cellprob_threshold=0.0, flow_threshold=0.4, ch1=0, ch2=0)
-
-	finish = time.time()
-	time_in_seconds = finish-start
-	IJ.log("Time to run Cellpose = {:.2f} seconds".format(time_in_seconds))
-	
-	imp_labels = IJ.getImage()
-	# image_to_segment.hide()
-	IJ.log("### Converting labels to ROIs ###")
-	rm_fiber = convertLabelsToROIs(imp_labels) # Saves the ROIs at the end
-	num_detections = rm_fiber.getCount()
-	IJ.log("Number of Detected Fibers: {}".format(num_detections))
-	if save_rois:
-		IJ.log("### Saving ROIs ###")
-		IJ.log("Saving to standard location: {}".format(namer.fiber_roi_path))
-		namer.create_directory("fiber_rois")
-		rm_fiber.save(namer.fiber_roi_path)
-	
-if __name__ == "__main__":
+if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
-	reload_modules()
-	IJ.log("".join(["\nRunning Image: ", os.path.basename(str(raw_path))]))
-	main()
+	closeAll()
+	namer = FileNamer(raw_path.path)
+	runner = CellposeRunner(model_name=model, segmentation_channel=seg_chan, diameter=cellpose_diam)
+	runner.set_image(namer.image_path)
+	runner.run_cellpose()
+	if save_rois:
+		runner.save_rois(namer.fiber_roi_path)
