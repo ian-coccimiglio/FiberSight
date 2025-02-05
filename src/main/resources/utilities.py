@@ -3,11 +3,13 @@ from ij.io import Opener
 import os, sys
 import urllib2
 
-CELLPOSE_MODELS = {
+HOMEDIR = os.path.expanduser("~")
+CELLPOSE_FINETUNED_MODELS = {
 	"WGA_21":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/WGA_21",
 	"HE_30":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/HE_30",
 	"PSR_9":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/PSR_9"
 }
+CELLPOSE_DEFAULT_MODELS = ["nuclei", "cyto2", "cyto3"]
 
 def make_directories(main_path, folder_names):
 	IJ.log("### Generating Folders ###")
@@ -66,18 +68,14 @@ def get_model_path(model_name):
 	"""
 	Returns a local model path corresponding to the Cellpose standard path (usually in the ~/.cellpose/models/ directory)
 	"""
-	homedir = os.path.expanduser("~")
-	model_path = os.path.join(homedir, ".cellpose/models/", model_name)	
-	return model_path
+	return os.path.join(HOMEDIR, ".cellpose/models/", model_name)
 
 def download_model(model_name):
 	"""
 	Downloads a cellpose model to the usual Cellpose directory.
 	"""
 	
-	cellpose_default_models = ["cyto2", "cyto3"]
-	
-	if model_name not in CELLPOSE_MODELS and model_name not in cellpose_default_models:
+	if model_name not in CELLPOSE_FINETUNED_MODELS or model_name not in CELLPOSE_DEFAULT_MODELS:
 		IJ.error("Error: {} is not a known model".format(model_name))
 		return False
 		
@@ -90,11 +88,11 @@ def download_model(model_name):
 		IJ.log("{} model already downloaded!".format(model_name))
 		return model_path
 	
-	if model_name in cellpose_default_models:
+	if model_name in CELLPOSE_DEFAULT_MODELS:
 		IJ.log("cyto2/cyto3 models not found in main GitHub repository, Cellpose should download it automatically.")
 		return False
 	
-	download_from_github(CELLPOSE_MODELS[model_name], model_path)
+	download_from_github(CELLPOSE_FINETUNED_MODELS[model_name], model_path)
 	return model_path
 
 def generate_required_directories(experiment_dir, process):

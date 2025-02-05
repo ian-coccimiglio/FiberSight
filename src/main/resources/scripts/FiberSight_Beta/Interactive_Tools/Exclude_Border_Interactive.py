@@ -4,7 +4,7 @@
 from ij import IJ, Prefs, WindowManager as WM
 import os, sys
 from ij.gui import WaitForUserDialog
-from image_tools import runCellpose, pickImage
+from image_tools import pickImage
 from jy_tools import closeAll, reload_modules
 from ij.plugin.frame import RoiManager
 from remove_edge_labels import make_excluded_edges, separate_labels_on_gpu
