@@ -2,21 +2,12 @@ from ij import ImagePlus, IJ
 from ij.plugin import ChannelSplitter
 import os
 from image_tools import read_image, convertLabelsToROIs, detectMultiChannel
-from utilities import download_from_github, make_directories
+from utilities import download_model, get_model_path
 import time
 
-# Combines Cellpose_Image and runCellpose to run IJ.run(image, "Cellpose ...", cellpose_str)
-# Needs: A single visible image
-
 class CellposeRunner:
-	
 	HOMEDIR = os.path.expanduser("~")
 	CELLPOSE_DEFAULT_MODELS = ["nuclei", "cyto2", "cyto3"]
-	CELLPOSE_FINETUNED_MODELS = {
-		"WGA_21":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/WGA_21",
-		"HE_30":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/HE_30",
-		"PSR_9":  "https://raw.githubusercontent.com/ian-coccimiglio/FiberSight/main/models/PSR_9"
-	}
 	
 	def __init__(self, model_name="cyto3", diameter=0, segmentation_channel=0, default_settings=None):
 		
@@ -30,21 +21,14 @@ class CellposeRunner:
 		} # default short-circuit expression 
 		self.diameter = diameter
 		self.model_name = model_name
-		self.model_path = self.get_model_path()
+		self.model_path = get_model_path(model_name)
 		self.pretrained_model = self.get_pretrained_model()
 		self.image = None
 		self.image_path = None
 		self.segmentation_channel = segmentation_channel
-		# self.namer = FileNamer(raw_path.path)
 		self.additional_flags = "[--use_gpu, --cellprob_threshold, {}, --flow_threshold, {}]".format(self.settings["cellprob_threshold"], self.settings["flow_threshold"])
 		self.label_image = None
 		self.rm = None
-		
-	def get_model_path(self):
-		"""
-		Returns a local model path corresponding to the Cellpose standard path (usually in the ~/.cellpose/models/ directory)
-		"""
-		return os.path.join(self.HOMEDIR, ".cellpose/models/", self.model_name)
 
 	def get_pretrained_model(self):
 		"""
@@ -55,7 +39,7 @@ class CellposeRunner:
 		elif os.path.exists(self.model_path):
 			pretrained_model_string = ""
 		else:
-			self.model_path = self.download_model()
+			self.model_path = download_model()
 			pretrained_model_string = ""
 		return pretrained_model_string
 
@@ -63,31 +47,6 @@ class CellposeRunner:
 		self.settings.update(kwargs)
 		return self
 
-	def download_model(self):
-		"""
-		Downloads a cellpose model to the usual Cellpose directory.
-		"""
-		
-		if self.model_name not in self.CELLPOSE_FINETUNED_MODELS or self.model_name not in self.CELLPOSE_DEFAULT_MODELS:
-			IJ.error("Error: {} is not a known model".format(self.model_name))
-			raise RuntimeError("Unknown Cellpose Model: {}".format(self.model_name))
-			
-		model_dir = os.path.dirname(self.model_path)
-		if not os.path.exists(model_dir):
-			os.makedirs(model_dir)
-		
-		if os.path.exists(self.model_path):
-			IJ.log("{} model already downloaded!".format(self.model_name))
-			return model_path
-		
-		if self.model_name in self.CELLPOSE_DEFAULT_MODELS:
-			IJ.log("cyto2/cyto3 models not found in main GitHub repository, Cellpose should download it automatically.")
-			return model_path
-		
-		IJ.log("Downloading model {} from GitHub".format(self.model_name))
-		download_from_github(self.CELLPOSE_FINETUNED_MODELS[self.model_name], self.model_path)
-		return model_path
-	
 	def find_cellpose_env(self):
 		possible_paths = [
 			os.path.join(self.HOMEDIR, "miniconda3", "envs", "cellpose"),
@@ -165,15 +124,19 @@ class CellposeRunner:
 		self.rm = convertLabelsToROIs(self.label_image)
 		num_detections = self.rm.getCount()
 		IJ.log("Cellpose Number of Detected Fibers: {}".format(num_detections))	
+		
 	def save_rois(self, save_path):
 		IJ.log("### Saving ROIs ###")
 		if self.rm.getCount() < 2:
-			IJ.error("One or fewer ROIs found, not saving")
-			return None
+			IJ.log("ERROR: One or fewer ROIs found, not saving ROIs")
+			return False
 		else:
 			IJ.log("Saving to location: {}".format(save_path))
-			os.makedirs(os.path.dirname(save_path), mode=int("755", 8)) # octal representation
+			save_dir = os.path.dirname(save_path)
+			if not os.path.exists(save_dir):
+				os.makedirs(save_dir, mode=int("755", 8)) # octal representation
 			self.rm.save(save_path)
+			return True
 		
 	def clean_up(self):
 		for obj in [self.image, self.label_image, self.rm]:

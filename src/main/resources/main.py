@@ -3,7 +3,7 @@ from ij.gui import GenericDialog
 from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
 from gui import FiberSight_GUI
-from image_tools import detectMultiChannel, pickImage, remove_small_rois, make_results, convertLabelsToROIs, mergeChannels
+from image_tools import pickImage, remove_small_rois, make_results, convertLabelsToROIs, mergeChannels
 from jy_tools import attrs, reload_modules, closeAll, is_development_machine
 from analysis_setup import AnalysisSetup
 from file_naming import FileNamer
@@ -15,6 +15,7 @@ import os, sys
 from collections import Counter, OrderedDict
 from roi_utils import read_rois
 from time import sleep
+from cellpose_runner import CellposeRunner
 reload_modules(force=True, verbose=True)
 
 def setup_experiment(image_path, channel_list):
@@ -73,11 +74,17 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		save_rois="True"
 		seg_chan = 0 if analysis.is_brightfield() else analysis.get_fiber_border_channel_position()
 		imp_dup = analysis.imp.duplicate()
-		image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, ANALYSIS_CONFIG["cellpose_diam"], ANALYSIS_CONFIG["cellpose_model"], save_rois, seg_chan)
+		# image_string = "raw_path='{}', cellpose_diam='{}', model='{}', save_rois='{}', seg_chan='{}'".format(analysis.namer.image_path, ANALYSIS_CONFIG["cellpose_diam"], ANALYSIS_CONFIG["cellpose_model"], save_rois, seg_chan)
 		updateProgress(0.2)
 		IJ.showStatus("Running Cellpose")
-		IJ.run(imp_dup, "Cellpose Image",image_string)
+		runner = CellposeRunner(model_name=ANALYSIS_CONFIG["cellpose_model"], diameter=ANALYSIS_CONFIG["cellpose_diam"], segmentation_channel=seg_chan)
+		runner.set_image(imp_dup)
+		runner.run_cellpose()
+		runner.save_rois(analysis.namer.fiber_roi_path)
+		
 		analysis.rm_fiber = RoiManager().getRoiManager()
+		if analysis.rm_fiber.getCount() == 0:
+			raise Exception("No ROIs found")
 		for im_title in WM.getImageTitles():
 			pickImage(im_title).close()
 	else:
@@ -157,11 +164,11 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 	updateProgress(1)
 	# analysis.save_metadata() TODO
 	return analysis
-
+#
 if __name__ in ['__builtin__','__main__']:
 	IJ.run("Close All")
 	closeAll()
 	home_dir = os.path.expanduser("~")
 	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
+	analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=False)
 	# analysis = run_FiberSight()

@@ -16,7 +16,9 @@
 import os
 from ij import IJ
 from jy_tools import closeAll, list_files
-from image_tools import runCellpose, batch_open_images, split_string
+from image_tools import batch_open_images, split_string
+from cellpose_runner import CellposeRunner
+from file_naming import FileNamer
 
 IJ.log("### Running Cellpose Batch mode ###")
 
@@ -32,13 +34,14 @@ def main():
 								)
 	
 	for image_path in image_paths:
-		IJ.run("Close All")
-		closeAll()
+		namer = FileNamer(image_path)
 		save_rois = "True" # Required for boolean parameter passing "True", rather than as python's True as "1".
-		image_string = "raw_path='{}' seg_chan='{}' cellpose_diam='{}' model='{}', save_rois='{}'".format(image_path, segChan, cellposeDiam, model, save_rois)
-		IJ.log(image_string)
-		IJ.run("Cellpose Image", image_string)
-		label_title = IJ.getImage().title
+		runner = CellposeRunner(model_name=model, segmentation_channel=seg_chan, diameter=cellpose_diam)
+		runner.set_image(image_path)
+		runner.run_cellpose()
+		runner.save_rois(namer.fiber_roi_path)
+		runner.clean_up()
+		
 	IJ.log("Done!")
 
 if __name__ in ['__builtin__','__main__']:

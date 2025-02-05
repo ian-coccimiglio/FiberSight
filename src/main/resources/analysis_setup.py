@@ -65,9 +65,11 @@ class AnalysisSetup:
 			self.cn_merge.hide()
 		else:
 			self.cn_merge = None
-		if self.FT:
-			self.ft_merge = mergeChannels(self.imp_channels, "FT_Merge")
-			for enum, ch in enumerate(self.imp_channels):
+		if self.FT:			
+			ch_to_merge = [ch for ch in self.imp_channels if ch.title in self.CHANNEL_NAMES]
+			self.ft_merge = mergeChannels(ch_to_merge, "FT_Merge")
+			
+			for enum, ch in enumerate(ch_to_merge):
 				self.ft_merge.setPosition(enum+1)
 				IJ.run(self.ft_merge, self.colormap[ch.title], "")
 				IJ.run(self.ft_merge, "Enhance Contrast", "saturated=0.05")
@@ -161,7 +163,7 @@ class AnalysisSetup:
 	def is_brightfield(self):
 		"""
 		Checks if an image is brightfield based on if the first channel is labelled as 'Fiber Borders',
-		and the subsequent channels are labelled as 'None'.
+		and the subsequent channels are labelled as 'None', AND if the image is 3-channels
 		"""
 		return self.all_channels[0] == "Fiber Border" and all(ch is None for ch in self.all_channels[1:4])
 	
