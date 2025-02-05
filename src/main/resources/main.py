@@ -163,5 +163,5 @@ if __name__ in ['__builtin__','__main__']:
 	closeAll()
 	home_dir = os.path.expanduser("~")
 	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	# analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
-	analysis = run_FiberSight()
+	analysis=run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=True)
+	# analysis = run_FiberSight()
