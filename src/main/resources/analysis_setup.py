@@ -44,7 +44,7 @@ class AnalysisSetup:
 
 		self.namer = FileNamer(raw_image_path)
 		self.all_channels = [None if ch == 'None' else ch for ch in channel_list]
-		self.rm_fiber = self.get_fiber_rois(fiber_roi_path)
+		self.rm_fiber = self.load_fiber_rois(fiber_roi_path)
 		
 		self.imp = read_image(self.namer.image_path)
 		self.imp = self.standardize_image() # Validates image for analysis
@@ -81,7 +81,19 @@ class AnalysisSetup:
 			roi.setFillColor(None)
 			roi.setStrokeColor(Color.yellow)
 			roi.setStrokeWidth(2)
-			
+	
+	def save_metadata(self, configuration):
+		
+		metadata = OrderedDict([
+		('Date and time of analysis', datetime.now().replace(microsecond=0)),
+		('Threshold method', threshold_method),
+		
+		])
+		
+		for key, value in metadata.items():
+			IJ.log("{}: {}".format(key, value))
+  
+	
 	def save_results(self):
 		"""
 		Creates a directory in standard location, then saves the results to it.
@@ -172,7 +184,7 @@ class AnalysisSetup:
 		# composite_string = " ".join(composite_list)
 		return colormap
 	
-	def get_fiber_rois(self, fiber_roi_path=None):
+	def load_fiber_rois(self, fiber_roi_path=None):
 		fiber_roi_path = self.namer.fiber_roi_path if fiber_roi_path is None else fiber_roi_path
 		try:
 			if os.path.exists(fiber_roi_path):
