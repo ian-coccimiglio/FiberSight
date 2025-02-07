@@ -8,18 +8,19 @@ The following three major functionalities are provided:
 
 # Software Requirements #
 1) FIJI version 1.54f or higher.
-2) BIOP, CLIJ/CLIJ2, and MorphoLibJ update sites enabled.
+2) BIOP and CLIJ/CLIJ2 update sites enabled.
 3) Properly installed conda (Anaconda3 and miniconda3 supported). 
-4) Conda environment called 'cellpose' with Cellpose installed in it. [Instructions Here](https://github.com/BIOP/ijl-utilities-wrappers?tab=readme-ov-file#ia2-conda-installation)
+4) Conda environment called 'cellpose' with Cellpose installed in it [(Instructions Here)](https://github.com/BIOP/ijl-utilities-wrappers?tab=readme-ov-file#ia2-conda-installation)
 
 # Hardware Recommendations #
 1) A GPU is very helpful for whole-slide stitched images
 2) Mac/Windows/Linux are all supported
 
 # Installation #
-1) Add the FiberSight update site: https://sites.imagej.net/FiberSight/
-2) Add the PTBIOP, CLIJ, and CLIJ2 update sites
-3) Restart FIJI.
+1) Open FIJI, navigate to Help\>Update...
+2) Select "Manage Update Sites"
+3) Select Add Unlisted Site, and add the FiberSight update site: https://sites.imagej.net/FiberSight/
+4) Then, add the PTBIOP, CLIJ, and CLIJ2 update sites (searachable on the list).
 
 # Basic Usage #
 From the top-bar, select FiberSight\>Start FiberSight.
