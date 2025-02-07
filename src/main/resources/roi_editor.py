@@ -49,6 +49,9 @@ class ManualRoiEditor:
 			roiWait.show()
 			save_path = new_save_location if new_save_location else self.original_roi_path
 			if self.analysis_type == "border_roi":
+				if self.rm.getCount() > 1:
+					self.rm.runCommand(imp,"Deselect");
+					self.rm.runCommand(imp,"Delete");
 				if self.rm.getCount() == 0:
 					roi = self.imp.getRoi()
 					if roi is not None:
