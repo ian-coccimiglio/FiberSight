@@ -18,7 +18,7 @@ class FiberSight_GUI(WindowAdapter):
     STRING_ROI_FORMATS = ', '.join([x for x in EXPECTED_ROI_FORMATS])
     CELLPOSE_MODELS = ["cyto3", "WGA_21", "PSR_9", "HE_30"]
     
-    def __init__(self, input_image_path=None, input_roi_path=None, channel_list=None, cp_model=None, is_testing=False):
+    def __init__(self, input_image_path=None, input_roi_path=None, channel_list=None, cp_model=None, auto_confirm=False):
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/data/results_smallCompositeCalibrated/FS_icon.png").getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT))
         # fsIconLeft = ImageIcon(ImageIcon("/home/ian/SynologyDrive/fs_Icon_right.png").getImage().getScaledInstance(150, 150, Image.SCALE_DEFAULT))
         
@@ -68,7 +68,7 @@ class FiberSight_GUI(WindowAdapter):
         self.mainFrame.addWindowListener(self.close_control)
         self.start_button.requestFocusInWindow()
         self.mainFrame.getRootPane().setDefaultButton(self.start_button)
-        if is_testing:
+        if auto_confirm:
             self.start_button.doClick()
         else: 
             self.mainFrame.visible = True

@@ -10,8 +10,8 @@ TARGET_PATH="/home/ian/Documents/Jython/FiberSight/target"
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk use java 8.0.382-tem
 mvn clean package
-ORIG_PACKAGE_PATH="$FIJI_PATH/FiberSight_beta-*.jar"
+ORIG_PACKAGE_PATH="$FIJI_PATH/FiberSight-*.jar"
 echo "Removing original package $ORIG_PACKAGE_PATH"
 rm $ORIG_PACKAGE_PATH
 echo "Copying path to $FIJI_PATH"
-cp "$TARGET_PATH/FiberSight_beta-$MVN_VERSION.jar" $FIJI_PATH
+cp "$TARGET_PATH/FiberSight-$MVN_VERSION.jar" $FIJI_PATH

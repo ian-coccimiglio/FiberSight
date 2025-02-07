@@ -11,6 +11,7 @@
 				<directory>src/main/resources/</directory>
 				<excludes>
 					<exclude>test/**</exclude>
+					<exclude>deprecated/**</exclude>
 				</excludes>
 			</resource>
 		</resources>
@@ -22,8 +23,8 @@
 		<relativePath />
 	</parent>
 
-	<artifactId>FiberSight_beta</artifactId>
-	<version>0.1.4</version>
+	<artifactId>FiberSight</artifactId>
+	<version>0.1.5</version>
 
 	<name>FiberSight</name>
 	<description>Package for FiberSight, a Fiji/ImageJ plugin.</description>
