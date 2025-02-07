@@ -123,6 +123,5 @@ for raw_image_name, fiber_roi_name in matched_files:
 			IJ.saveAs("Results", results_path)
 	print(analysis)
 
-
 #	if create_figures:
 #		pass

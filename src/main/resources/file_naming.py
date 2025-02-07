@@ -13,7 +13,8 @@ class FileNamer:
 		"morph": "_morphology.jpeg",
 		"cn_cutoff": "_central_nucleation.jpeg",
 		"cn_gradient": "_gradient_nucleation.jpeg",
-		"ft_comp": "_fiber_typing.jpeg"
+		"ft_comp": "_fiber_typing.jpeg",
+		"config": "_configuration.txt"
 		# more can be added as necessary
 	}
 	
@@ -29,7 +30,8 @@ class FileNamer:
 		"morph": "figures",
 		"cn_cutoff": "figures",
 		"cn_gradient": "figures",
-		"ft_comp": "figures"
+		"ft_comp": "figures",
+		"config": "run_configuration"
 		# more can be added as necessary
 	}
 	
@@ -54,6 +56,7 @@ class FileNamer:
 		self.manual_rois_path = self.get_path("manual_rois")
 		self.morphology_path = self.get_path("morph")
 		self.cn_path = self.get_path("cn_cutoff")
+		self.config_path = self.get_path("config")
 		self.cn_gradient_path = self.get_path("cn_gradient")
 		self.ft_comp_path = self.get_path("ft_comp")
 		self.figures_path = self.get_path("figures")
@@ -66,7 +69,7 @@ class FileNamer:
 			pass
 		else:
 			make_directories(self.experiment_dir, self.DIRECTORIES[directory])
-			
+		
 	def get_constructed_path(self, in_dir, concat_list):
 		constructed_path = os.path.join(self.get_directory(in_dir), "_".join([str(s) for s in concat_list]))
 		return constructed_path

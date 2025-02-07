@@ -39,7 +39,7 @@ class CellposeRunner:
 		elif os.path.exists(self.model_path):
 			pretrained_model_string = ""
 		else:
-			self.model_path = download_model()
+			self.model_path = download_model(self.model_name)
 			pretrained_model_string = ""
 		return pretrained_model_string
 
@@ -124,7 +124,7 @@ class CellposeRunner:
 		self.rm = convertLabelsToROIs(self.label_image)
 		num_detections = self.rm.getCount()
 		IJ.log("Cellpose Number of Detected Fibers: {}".format(num_detections))	
-		
+	
 	def save_rois(self, save_path):
 		IJ.log("### Saving ROIs ###")
 		if self.rm.getCount() < 2:

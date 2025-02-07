@@ -32,14 +32,14 @@ def find_all_nuclei(dapi_channel, rm_fiber):
 	roiArray, rm_nuclei = analyze_particles_get_roi_array(imp_temp, PA_settings)
 	return roiArray, rm_nuclei
 
-def determine_central_nucleation(rm_fiber, rm_nuclei, num_Check = 8, imp=None):
+def determine_central_nucleation(rm_fiber, rm_nuclei, percent_erosion=0.25, num_Check = 8, imp=None):
 	nFibers = rm_fiber.getCount()
 	xFib, yFib = getCentroidPositions(rm_fiber)
 	xNuc, yNuc = getCentroidPositions(rm_nuclei)
 	nearestNucleiFibers = findNdistances(xNuc, yNuc, xFib, yFib, nFibers, rm_nuclei, num_Check)
 	count_nuclei = findInNearestFibers(nearestNucleiFibers, rm_fiber, xNuc, yNuc)
 	all_reduced = []
-	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, 0.25, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=imp)
+	count_central, relative_reduced_area, rm_central = single_erosion(rm_fiber, percent_erosion, all_reduced, nearestNucleiFibers, xNuc, yNuc, xFib, yFib, imp=imp)
 	return count_central, count_nuclei, rm_central, xFib, yFib, xNuc, yNuc, nearestNucleiFibers
 
 def determine_number_peripheral(count_central, count_nuclei):
@@ -112,19 +112,22 @@ def repeated_erosion(percReductions, rm_fiber, nearestNucleiFibers, xNuc, yNuc, 
 
 def fill_color_rois(central_fibers, percReductions, fiber_rois):
 	# Set differences:
-	for percent in percReductions:
-		if percent != 0.9:
-			color_fibers = set(central_fibers[percent])-set(central_fibers[round(percent+0.1, 2)])
-		else:
-			color_fibers = set(central_fibers[percent])
+	ordered_percent_eroded = sorted(percReductions, reverse=False)
+	for percent, nextPercent in zip(ordered_percent_eroded, ordered_percent_eroded[1:]):
+		central_fibers_set = set(central_fibers[percent])
+		central_fibers_offset = set(central_fibers[nextPercent])
+		color_fibers = central_fibers_set-central_fibers_offset
 		
 		color= Color(255-int((1-percent)*255), int((1-percent)*255), 0)
-		for enum, c_roi in enumerate(fiber_rois):
-			if enum in color_fibers:
-				roiRecolor(c_roi, color)
+		for enum in color_fibers:
+			roiRecolor(fiber_rois[enum], color)
+	
+	color_fibers = set(central_fibers[max(ordered_percent_eroded)])
+	for enum in color_fibers:
+		roiRecolor(fiber_rois[enum], Color.RED)
 	
 	for non_peripheral in set(range(len(fiber_rois)))-set(central_fibers[0.0]):
-		roiRecolor(fiber_rois[non_peripheral], Color.BLACK)
+		roiRecolor(fiber_rois[non_peripheral], Color.GREEN)
 
 if __name__ == "__main__":
 	main_dir = "/home/ian/data/test_Experiments/Experiment_4_Central_Nuc/"
@@ -160,7 +163,7 @@ if __name__ == "__main__":
 	# rm_central.close()
 	rm_fiber = RoiManager()
 	rm_fiber.open(roi_path)
-	fill_color_rois(central_fibers, percReductions, rm_fiber)
+	fill_color_rois(central_fibers, percReductions, rm_fiber.getRoisAsArray())
 
 #options = PA.SHOW_ROI_MASKS \
 #                    + PA.SHOW_RESULTS \
