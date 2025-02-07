@@ -1,5 +1,5 @@
 # FiberSight #
-FiberSight is an extensible ImageJ/Fiji plugin, designed to generate robust quantifications and visualizations of skeletal muscle images, using custom finetuned [Cellpose](https://github.com/MouseLand/cellpose) models for segmentation, and custom algorithms for estimating morphology, central-nucleation, and fiber-typing.
+FiberSight is an extensible ImageJ/Fiji plugin developed at the Rossi lab at the University of British Columbia. It is designed to generate robust quantifications and visualizations of skeletal muscle images, using custom finetuned [Cellpose](https://github.com/MouseLand/cellpose) models for segmentation, and custom algorithms for estimating morphology, central-nucleation, and fiber-typing.
 
 <p align="center">
     <img width="800" src="assets/images/FiberSight_Launcher.png">
@@ -93,3 +93,5 @@ Additional options are available too if you select the "Show Advanced Options" c
 4) Choose the pre-set diameter of Cellpose.
 5) Choose whether to quantify hybrid muscle fiber-types (I/IIa, IIa/IIx, IIx/IIb)
 6) Choose whether to overwrite a previously generated Cellpose segmentation.
+
+## How to Cite ##
