@@ -38,6 +38,9 @@ Notes:
 FiberSight can be initialized by searching for "Start FiberSight". This opens a dialog (shown below) which is used to set up the experiment and ensure the proper inputs.
 ![](assets/images/FiberSight_Launcher.png)
 
+The general process diagram follows this general structure:
+![](assets/images/FiberSight_Process_Diagram.drawio.png)
+
 # Outputs #
 ![](assets/images/PSR_Morphology.jpeg)
 *Output morphological image, muscle fibers highlighted in red*
