@@ -64,7 +64,8 @@ class TestDownloadModel(unittest.TestCase):
 		IJ.redirectErrorMessages()
 	def test_download_model(self):
 		self.assertTrue(download_model("WGA_21"), "Model not downloaded properly")
-		self.assertFalse(download_model("WGA_22"), "Model should not exist")
+		with self.assertRaises(RuntimeError):
+			download_model("WGA_22")
 
 class TestCellpose(unittest.TestCase):
 	def setUp(self):
@@ -154,7 +155,7 @@ class TestCellposeFluorescence(unittest.TestCase):
 
 class TestFiberSight(unittest.TestCase):
 	def _check_paths(self, analysis):
-		self.assertTrue(analysis.namer.validate_structure)
+		self.assertTrue(analysis.namer.validate_structure())
 		self.assertTrue(os.path.exists(analysis.namer.results_path))
 		self.assertTrue(os.path.exists(analysis.namer.fiber_roi_path))
 		self.assertGreater(len(read_rois(analysis.namer.fiber_roi_path)), 1)
@@ -234,20 +235,20 @@ class TestFiberSight(unittest.TestCase):
 
 
 # TODO
-class TestRoiModification(unittest.TestCase):
-	def setUp(self):
-		# Open a non-calibrated image
-		pass
-	def test_small_uncalibrated_removal(self):
-		pass
-	def test_small_calibrated_removal(self):
-		pass
-	def test_border_removal_gpu(self):
-		pass
-	def test_border_removal_cpu(self):
-		pass
-	def tearDown(self):
-		pass
+#class TestRoiModification(unittest.TestCase):
+#	def setUp(self):
+#		# Open a non-calibrated image
+#		pass
+#	def test_small_uncalibrated_removal(self):
+#		pass
+#	def test_small_calibrated_removal(self):
+#		pass
+#	def test_border_removal_gpu(self):
+#		pass
+#	def test_border_removal_cpu(self):
+#		pass
+#	def tearDown(self):
+#		pass
 
 def run_tests():
 	# Create test suite

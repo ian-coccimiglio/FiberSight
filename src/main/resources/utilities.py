@@ -2,6 +2,8 @@ from ij import IJ
 from ij.io import Opener
 import os, sys
 import urllib2
+from time import sleep
+import csv
 
 HOMEDIR = os.path.expanduser("~")
 CELLPOSE_FINETUNED_MODELS = {
@@ -68,16 +70,19 @@ def get_model_path(model_name):
 	"""
 	Returns a local model path corresponding to the Cellpose standard path (usually in the ~/.cellpose/models/ directory)
 	"""
-	return os.path.join(HOMEDIR, ".cellpose/models/", model_name)
+	model_path = os.path.join(HOMEDIR, ".cellpose/models/", model_name)
+	if not os.path.exists(model_path):
+		download_model(model_name)
+	
+	return model_path
 
 def download_model(model_name):
 	"""
 	Downloads a cellpose model to the usual Cellpose directory.
 	"""
 	
-	if model_name not in CELLPOSE_FINETUNED_MODELS or model_name not in CELLPOSE_DEFAULT_MODELS:
-		IJ.error("Error: {} is not a known model".format(model_name))
-		return False
+	if model_name not in CELLPOSE_FINETUNED_MODELS and model_name not in CELLPOSE_DEFAULT_MODELS:
+		raise RuntimeError("Error: {} is not a known model".format(model_name))
 		
 	model_path = get_model_path(model_name)
 	model_dir = os.path.dirname(model_path)
@@ -94,6 +99,20 @@ def download_model(model_name):
 	
 	download_from_github(CELLPOSE_FINETUNED_MODELS[model_name], model_path)
 	return model_path
+
+def setup_experiment(image_path, channel_list):
+	exp = {"image_path": image_path, "channel_list": channel_list}
+	return exp
+
+def save_fibertype_mask(channel_dup, analysis, threshold_method, image_correction):
+	IJ.log("Saving fiber-type mask: {}".format(channel_dup.title))
+	correction_suffix = "pff" if image_correction == "pseudo_flat_field" else "nc"
+	ft_mask_path = analysis.namer.get_constructed_path("masks", [analysis.namer.base_name, channel_dup.title, threshold_method, correction_suffix])
+	IJ.saveAs(channel_dup, "Png", ft_mask_path)
+
+def updateProgress(curr_progress):
+	sleep(0.1)
+	IJ.showProgress(curr_progress)
 
 def generate_required_directories(experiment_dir, process):
 	dir_list = []

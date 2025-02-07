@@ -380,7 +380,7 @@ class FiberSight_GUI(WindowAdapter):
         return self.advanced_overwrite_button.isSelected()
 
     def get_remove_small(self):
-        return self.advanced_hybrids.isSelected()
+        return self.advanced_remove.isSelected()
         
     def get_ft_hybrid(self):
         return self.advanced_hybrids.isSelected()

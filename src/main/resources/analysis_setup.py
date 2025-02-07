@@ -44,6 +44,7 @@ class AnalysisSetup:
 
 		self.namer = FileNamer(raw_image_path)
 		self.all_channels = [None if ch == 'None' else ch for ch in channel_list]
+		self.fiber_roi_path = fiber_roi_path
 		self.rm_fiber = self.load_fiber_rois(fiber_roi_path)
 		
 		self.imp = read_image(self.namer.image_path)
@@ -53,6 +54,8 @@ class AnalysisSetup:
 		self.channel_dict = self.remap_channels()
 		self.colormap = self.get_colormap()
 		self.check_channels()
+		self.central_fibers = None
+		self.percReductions = None
 
 		self.ft_sigma_blur=ft_sigma_blur
 		self.border_channel, self.dapi_channel, self.ft_channels = self.rename_channels() # Renames channels according
@@ -83,19 +86,7 @@ class AnalysisSetup:
 			roi.setFillColor(None)
 			roi.setStrokeColor(Color.yellow)
 			roi.setStrokeWidth(2)
-	
-	def save_metadata(self, configuration):
 		
-		metadata = OrderedDict([
-		('Date and time of analysis', datetime.now().replace(microsecond=0)),
-		('Threshold method', threshold_method),
-		
-		])
-		
-		for key, value in metadata.items():
-			IJ.log("{}: {}".format(key, value))
-  
-	
 	def save_results(self):
 		"""
 		Creates a directory in standard location, then saves the results to it.
@@ -187,15 +178,15 @@ class AnalysisSetup:
 		return colormap
 	
 	def load_fiber_rois(self, fiber_roi_path=None):
-		fiber_roi_path = self.namer.fiber_roi_path if fiber_roi_path is None else fiber_roi_path
+		self.fiber_roi_path = self.namer.fiber_roi_path if fiber_roi_path is None else fiber_roi_path
 		try:
-			if os.path.exists(fiber_roi_path):
+			if os.path.exists(self.fiber_roi_path):
 				rm_fiber = RoiManager().getRoiManager()
-				rm_fiber.open(fiber_roi_path)
+				rm_fiber.open(self.fiber_roi_path)
 			else:
 				return None
 		except IOError:
-			IJ.error("ROI File Not Found", "Could not find the Fiber ROI path: {}. \n\nDid you remember to run the Cellpose script first?".format(fiber_roi_path))
+			IJ.error("ROI File Not Found", "Could not find the Fiber ROI path: {}. \n\nDid you remember to run the Cellpose script first?".format(self.fiber_roi_path))
 			raise
 		return rm_fiber
 
