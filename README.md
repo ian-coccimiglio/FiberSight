@@ -4,26 +4,31 @@ FiberSight is an extensible ImageJ/Fiji plugin, designed to generate robust quan
 The following three major functionalities are provided:
 1) Skeletal muscle fiber morphology (Fiber Feret and Cross-Sectional Area)
 2) Skeletal muscle fiber nucleation state (Central/Peripheral/Total nuclei)
-3) Skeletal muscle fibertyping (Type I, IIa, IIx, IIb)
+3) Skeletal muscle fiber-typing (Type I, IIa, IIx, IIb)
 
 # Software Requirements #
 1) FIJI version 1.54f or higher.
 2) BIOP, CLIJ/CLIJ2, and MorphoLibJ update sites enabled.
-3) Properly installed conda (Anaconda3, miniconda3 supported). 
+3) Properly installed conda (Anaconda3 and miniconda3 supported). 
 4) Conda environment called 'cellpose' with Cellpose installed in it. [Instructions Here](https://github.com/BIOP/ijl-utilities-wrappers?tab=readme-ov-file#ia2-conda-installation)
 
-# Hardware Recommendations $
-1) A GPU is very helpful for large images
+# Hardware Recommendations #
+1) A GPU is very helpful for whole-slide stitched images
 2) Mac/Windows/Linux are all supported
 
 # Installation #
-1) Add the FiberSight update site
+1) Add the FiberSight update site: https://sites.imagej.net/FiberSight/
+2) Add the PTBIOP, CLIJ, and CLIJ2 update sites
+3) Restart FIJI.
 
-# Usage #
-Input images should be in .tif format, or a standard microscope format (.nd2 and .czi files supported).
+# Basic Usage #
+From the top-bar, select FiberSight\>Start FiberSight.
 
-The central design of FiberSight requires that for each analysis, you provide the following folder structure.  The sampleID should be unique for each sample. An example is provided below. 
+![](assets/images/FiberSight_Launcher.png)
 
+Input images should be in a lossless format, ideally .tif format, or else a standard microscope format (.nd2 and .czi files supported).
+
+FiberSight requires that you provide the following folder structure for your images.
 - experiment\_folder/
   - raw/
     - sampleID1.tif
@@ -31,12 +36,24 @@ The central design of FiberSight requires that for each analysis, you provide th
     - ...
 
 Notes:
-- The experiment folder can have any name using valid alphanumeric characters.
+- The experiment folder can have any name using any valid alphanumeric characters.
 - All raw image files should be placed in a subfolder called 'raw'.
 
-# Design #
-FiberSight can be initialized by searching for "Start FiberSight". This opens a dialog (shown below) which is used to set up the experiment and ensure the proper inputs.
-![](assets/images/FiberSight_Launcher.png)
+A number of options can be set, including:
+- Selection of Fiber Border channel (Necessary)
+- Choice of pre-existing fiber ROIs (Optional).
+- Selection of DAPI channel (Optional)
+- Selection of Fiber-type channels (Optional)
+- Choice of Cellpose model (Necessary if fiber ROIs do not exist yet)
+
+# Advanced Usage #
+Additional options are available too if you select the Advanced options checkbox.
+1) Choose whether to exclude small ROIs with an area under 10 pixels.
+2) Choose whether to use flat-field correction for an image with variable staining quality.
+3) Choose the type of thresholding method used in muscle fiber-typing
+4) Choose the pre-set diameter of Cellpose.
+5) Choose whether to quantify hybrid muscle fiber-types (I/IIa, IIa/IIx, IIx/IIb)
+6) Choose whether to overwrite a previously generated Cellpose segmentation.
 
 # Outputs #
 ![](assets/images/PSR_Morphology.jpeg)
