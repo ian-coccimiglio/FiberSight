@@ -56,6 +56,10 @@ class AnalysisSetup:
 		self.check_channels()
 		self.central_fibers = None
 		self.percReductions = None
+		self.flat_morphology_image = None
+		self.flat_CN_image = None
+		self.flat_gradient_nucleation_image = None
+		self.ft_image = None
 
 		self.ft_sigma_blur=ft_sigma_blur
 		self.border_channel, self.dapi_channel, self.ft_channels = self.rename_channels() # Renames channels according
@@ -115,27 +119,29 @@ class AnalysisSetup:
 				IJ.run(morphology_image, "Magenta", "")
 			morphology_image = morphology_image.flatten()
 			morphology_image.setRoi(self.drawn_border_roi)
-			flat_morphology_image = morphology_image.flatten()
-			IJ.saveAs(flat_morphology_image, "Jpg", self.namer.morphology_path)
-			pass # Morphology image
-	
+			self.flat_morphology_image = morphology_image.flatten()
+			self.flat_morphology_image.title = "{}_Fiber_Morphology".format(self.namer.base_name)
+			IJ.saveAs(self.flat_morphology_image, "Jpg", self.namer.morphology_path)
+			
 		# Make gradient and binary central nucleation images #
 		if self.CN:
+			# Central-nucleation composite image
 			self.rm_fiber.runCommand(self.cn_merge, "Show None")
 			flat_cn_merge = self.cn_merge.flatten()
 			show_rois(flat_cn_merge, central_rois)
 			IJ.run(flat_cn_merge, "Labels...",  "color=lightgray font="+str(24)+" show use bold")
 
-			flat_CN_image = flat_cn_merge.flatten()
-			IJ.saveAs(flat_CN_image, "Jpg", self.namer.cn_path)
+			self.flat_CN_image = flat_cn_merge.flatten()
+			self.flat_CN_image.title = "{}_Central_Nucleation".format(self.namer.base_name)
+			IJ.saveAs(self.flat_CN_image, "Jpg", self.namer.cn_path)
 
-			flat_gradient_nucleation_image = self.cn_merge.flatten()
-			fill_color_rois(central_fibers, percReductions, self.rm_fiber.getRoisAsArray())
-			self.rm_fiber.moveRoisToOverlay(flat_gradient_nucleation_image)
-			IJ.saveAs(flat_gradient_nucleation_image, "Jpg", self.namer.cn_gradient_path)
-			self.reset_rois()
-			# Central-nucleation composite image
 			# Multiple erosion image with fraction as image label
+			self.flat_gradient_nucleation_image = self.cn_merge.flatten()
+			fill_color_rois(central_fibers, percReductions, self.rm_fiber.getRoisAsArray())
+			self.rm_fiber.moveRoisToOverlay(self.flat_gradient_nucleation_image)
+			self.flat_gradient_nucleation_image.title = "{}_Gradient_Nucleation".format(self.namer.base_name)
+			IJ.saveAs(self.flat_gradient_nucleation_image, "Jpg", self.namer.cn_gradient_path)
+			self.reset_rois()
 			
 		# Make fiber-typing composite image #
 		if self.FT:	
@@ -143,8 +149,9 @@ class AnalysisSetup:
 				self.rm_fiber.rename(label, identified_fiber_types[label])
 			self.rm_fiber.moveRoisToOverlay(self.ft_merge)
 			IJ.run(self.ft_merge, "Labels...",  "color=cyan font="+str(24)+" show use bold")
-			ft_image = self.ft_merge.flatten()
-			IJ.saveAs(ft_image, "Jpg", self.namer.ft_comp_path)
+			self.ft_image = self.ft_merge.flatten()
+			self.ft_image.title = "{}_Fiber_Typing".format(self.namer.base_name)
+			IJ.saveAs(self.ft_image, "Jpg", self.namer.ft_comp_path)
 	
 	def cleanup(self):
 		WM.getWindow("Log").close()
