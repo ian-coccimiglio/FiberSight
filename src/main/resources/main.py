@@ -80,7 +80,8 @@ def run_FiberSight(input_image_path=None, input_roi_path=None, channel_list=None
 		"run_cellpose": analysis.rm_fiber is None or fs.get_overwrite_button(),
 		"cellpose_model": fs.get_cellpose_model(),
 		"cellpose_diam": fs.get_cellpose_diameter(),
-		"remove_fibers_outside_border": analysis.drawn_border_roi is not None
+		"remove_fibers_outside_border": analysis.drawn_border_roi is not None,
+		"show_figures": not auto_confirm
 	}
 	
 	results_dict = {}
@@ -94,13 +95,13 @@ def run_FiberSight(input_image_path=None, input_roi_path=None, channel_list=None
 		save_rois="True"
 		seg_chan = 0 if analysis.is_brightfield() else analysis.get_fiber_border_channel_position()
 		imp_dup = analysis.imp.duplicate()
-		updateProgress(0.2)
-		IJ.showStatus("Running Cellpose")
 		runner = CellposeRunner(
 			model_name = ANALYSIS_CONFIG["cellpose_model"],
 			diameter = ANALYSIS_CONFIG["cellpose_diam"], 
 			segmentation_channel = seg_chan)
 		runner.set_image(imp_dup)
+		updateProgress(0.2)
+		IJ.showStatus("Running Cellpose")
 		runner.run_cellpose()
 		runner.save_rois(analysis.namer.fiber_roi_path)
 		
@@ -192,6 +193,11 @@ def run_FiberSight(input_image_path=None, input_roi_path=None, channel_list=None
 	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types, central_fibers=analysis.central_fibers, percReductions=analysis.percReductions)
 	updateProgress(1)
 	save_configurations(analysis, channels, fs, ANALYSIS_CONFIG)
+
+	for figure in [analysis.flat_morphology_image, analysis.flat_CN_image, analysis.flat_gradient_nucleation_image, analysis.ft_image]:
+		if figure is not None and ANALYSIS_CONFIG["show_figures"]:
+			figure.show()
+
 	return analysis
 
 if __name__ in ['__builtin__','__main__']:
@@ -199,5 +205,5 @@ if __name__ in ['__builtin__','__main__']:
 	closeAll()
 	home_dir = os.path.expanduser("~")
 	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	analysis = run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], auto_confirm=True)
-	# analysis = run_FiberSight()
+	# analysis = run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], auto_confirm=True)
+	analysis = run_FiberSight()
