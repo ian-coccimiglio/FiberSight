@@ -38,9 +38,6 @@ Notes:
 FiberSight can be initialized by searching for "Start FiberSight". This opens a dialog (shown below) which is used to set up the experiment and ensure the proper inputs.
 ![](assets/images/FiberSight_Launcher.png)
 
-The general process diagram follows this general structure:
-![](assets/images/FiberSight_Process_Diagram.drawio.png)
-
 # Outputs #
 ![](assets/images/PSR_Morphology.jpeg)
 *Output morphological image, muscle fibers highlighted in red*
@@ -61,4 +58,5 @@ FiberSight then executes a series of operations to determine each skeletal muscl
 5) Determines nucleation state using thresholding, watershed separation on the nuclear stain, and ROI erosion of the fiber.
 6) Determines fiber type using a (Mean, Otsu, Huang) threshold process across different stains, measuring each fiber's area and its positive area fraction, then sorting the fiber into bins according to the greatest area fraction. Hybridization state is determined based on whether a fiber exceeds 50% area-fraction in multiple physiological categories.
 
-
+The process diagram follows this general structure.
+![](assets/images/FiberSight_Process_Diagram.drawio.png)
