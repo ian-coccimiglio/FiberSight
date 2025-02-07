@@ -40,11 +40,9 @@ Notes:
 - All raw image files should be placed in a subfolder called 'raw'.
 
 A number of options can be set, including:
-- Selection of Fiber Border channel (Necessary)
-- Choice of pre-existing fiber ROIs (Optional).
-- Selection of DAPI channel (Optional)
-- Selection of Fiber-type channels (Optional)
-- Choice of Cellpose model (Necessary if fiber ROIs do not exist yet)
+- Selection of channels and stains (Necessary)
+- Whether to import pre-existing fiber ROIs (Optional).
+- Choice of Cellpose model (Automatically used if fiber ROIs are not imported)
 
 # Advanced Usage #
 Additional options are available too if you select the Advanced options checkbox.
