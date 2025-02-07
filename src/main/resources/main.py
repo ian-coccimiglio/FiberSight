@@ -50,8 +50,8 @@ def save_configurations(analysis, channels, fs, ANALYSIS_CONFIG):
 	IJ.saveString(IJ.getLog(), analysis.namer.config_path)
 	return general_params
 
-def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, auto_confirm=False):
-	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, auto_confirm=auto_confirm)
+def run_FiberSight(input_image_path=None, input_roi_path=None, channel_list=None, cp_model=None, auto_confirm=False):
+	fs = FiberSight_GUI(input_image_path=input_image_path, input_roi_path=input_roi_path, channel_list=channel_list, cp_model=cp_model, auto_confirm=auto_confirm)
 	try:
 		if fs.close_control.terminated:
 			return False

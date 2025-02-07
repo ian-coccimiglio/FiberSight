@@ -1,21 +1,19 @@
-#@ File (label = "Select a raw image to draw a border on", style="file", persist=true) raw_path
+#@ String(visibility=MESSAGE, value="<html><b><span style='color:blue; font-size:14px;'>ROI Border Drawing Tool</span></b></html>") read_msg
+#@ String(visibility=MESSAGE, value="<html>This tool will save only the <b>first</b> ROI in the ROI Manager <br>This ROI should not self-intersect</br><br>Downstream analysis will exclude muscle fibers outside this ROI</br></html>") roi_msg
+#@ File (label = "Select a raw image to draw a border on", style="file", persist=true) image_path
 
 """
-Allows for an image to be selected, and an associated ROI border to be drawn/edited and saved.
+Load an image and draw/edit an existing ROI border.
 
 Complex/Compound ROIs will be processed correctly, but not multiple ROIs.
 
-ROI should not intersect with itself to ensure meaningful results.
+Only the FIRST ROI will be saved.
 """
 
 from ij import IJ
-import os, sys
-from jy_tools import closeAll, list_files, reload_modules
-from roi_editor import ManualRoiEditor
-from file_naming import FileNamer
+from script_modules import draw_border
+from jy_tools import closeAll, reload_modules
 reload_modules()
-namer = FileNamer(raw_path.path)
-roi_directory = "border_roi"
-namer.create_directory(roi_directory)
-roi_editor = ManualRoiEditor(roi_directory, namer.image_path)
-roi_editor.edit_roi()
+
+if __name__ in ['__builtin__','__main__']:
+	draw_border(image_path.path)

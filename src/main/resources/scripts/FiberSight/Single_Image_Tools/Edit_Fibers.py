@@ -1,3 +1,4 @@
+#@ String(visibility=MESSAGE, value="<html><b><span style='color:blue; font-size:14px;'>Muscle Fiber Editing Tool</span></b></html>") read_msg
 #@ File (label = "Select a raw image file", style="file", persist=true) raw_image
 #@ File (label = "Select corresponding fiber ROI file", style="file", persist=true) fiber_rois
 
@@ -8,15 +9,8 @@ ROIs should not intersect with themselves to ensure meaningful results.
 """
 
 from ij import IJ
-import os, sys
 from jy_tools import closeAll
-from roi_editor import ManualRoiEditor
-from file_naming import FileNamer
-from image_tools import editRoi
+from script_modules import edit_fibers
 
-IJ.log("Current Sample is: {}".format(raw_image.getName()))
-namer = FileNamer(raw_image.path)
-roi_editor = ManualRoiEditor("manual_rois", image_path=namer.image_path)
-roi_editor.edit_roi(save=False)
-
-# rm.save(manual_roi_path)
+if __name__ in ['__builtin__','__main__']:
+	edit_fibers(raw_image.path, fiber_rois.path)

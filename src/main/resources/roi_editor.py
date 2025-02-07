@@ -14,6 +14,7 @@ class ManualRoiEditor:
 		self.namer = FileNamer(image_path)
 		self.imp = read_image(image_path)
 		self.rm = RoiManager().getRoiManager()
+		self.analysis_type = analysis_type
 		self.original_roi_path = self.namer.get_path(analysis_type) if not roi_path else roi_path
 
 		self.imp.show()
@@ -47,11 +48,16 @@ class ManualRoiEditor:
 			roiWait = WaitForUserDialog("Edit ROIs", "Edit ROIs as needed, then hit OK")
 			roiWait.show()
 			save_path = new_save_location if new_save_location else self.original_roi_path
-			if self.rm.getCount() == 0:
-				roi = self.imp.getRoi()
-				if roi is not None:
-					self.rm.addRoi(roi)
-			self._save_rois(save_path)
+			if self.analysis_type == "border_roi":
+				if self.rm.getCount() == 0:
+					roi = self.imp.getRoi()
+					if roi is not None:
+						self.rm.addRoi(roi)
+				self._save_rois(save_path)
+			elif self.analysis_type == "manual_rois":
+				self._save_rois(save_path)
+			else:
+				raise ValueError("Unknown analysis-type, select either manual_rois or border_roi")
 			
 		else:
 			IJ.log("No existing ROIs found. Drawing new ROIs instead.")
