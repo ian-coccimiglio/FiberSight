@@ -5,8 +5,8 @@ MVN_VERSION=$(mvn -q \
     --non-recursive \
     exec:exec)
 
-FIJI_PATH="/home/ian/Fiji.app/jars"
-TARGET_PATH="/home/ian/Documents/Jython/FiberSight/target"
+FIJI_PATH="$HOME/Fiji.app/jars"
+TARGET_PATH="$HOME/Documents/Jython/FiberSight/target"
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk use java 8.0.382-tem
 mvn clean package
