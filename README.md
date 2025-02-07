@@ -36,7 +36,7 @@ Notes:
 ## Outputs ##
 
 <p align="center">
-    <img width="400" src="assets/images/Results_Spreadsheet.png" alt="Results">
+    <img width="800" src="assets/images/Results_Spreadsheet.png" alt="Results">
     <br>
     <em>(Left) Output results spreadsheet of an image stained with DAPI, Type I, Type IIa, and Laminin (Fiber Border).</em>
 </p>
