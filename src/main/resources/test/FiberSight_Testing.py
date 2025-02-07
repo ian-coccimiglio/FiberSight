@@ -121,6 +121,22 @@ class TestCellpose(unittest.TestCase):
 		if self.runner is not None:
 			self.runner.clean_up()
 
+class TestCN(unittest.TestCase):
+	def setUp(self):
+		IJ.redirectErrorMessages()
+			
+	def test_CN(self):
+		experiment_dir = os.path.join(test_directory, "test_experiment_cn/")
+		image_dir = os.path.join(experiment_dir, "raw/")
+		image_path = os.path.join(image_dir, "FR160_14A4_Fixed_Composite.tif")
+		channel_list = ["DAPI", "Fiber Border", "None", "None"]
+		analysis = run_FiberSight(input_image_path=image_path, channel_list=channel_list, auto_confirm=True)
+		self.assertTrue(analysis.central_fibers is not None)
+		
+	def tearDown(self):
+		IJ.run("Close All")
+		closeAll()
+
 class TestCellposeFluorescence(unittest.TestCase):
 	def setUp(self):
 		experiment_dir = os.path.join(test_directory, "test_experiment_fluorescence/")
@@ -172,7 +188,7 @@ class TestFiberSight(unittest.TestCase):
 	def test_Calibrated_Image(self):
 		if not os.path.exists(self.exp1["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp1["image_path"], channel_list=self.exp1["channel_list"], is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp1["image_path"], channel_list=self.exp1["channel_list"], auto_confirm=True)
 		self.assertTrue(analysis.Morph)
 		self.assertTrue(analysis.CN)
 		self.assertFalse(analysis.FT)
@@ -181,7 +197,7 @@ class TestFiberSight(unittest.TestCase):
 	def test_Rat_Fluorescence(self):
 		if not os.path.exists(self.exp2["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp2["image_path"], channel_list=self.exp2["channel_list"], is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp2["image_path"], channel_list=self.exp2["channel_list"], auto_confirm=True)
 		self.assertTrue(analysis.Morph)
 		self.assertTrue(analysis.CN)
 		self.assertTrue(analysis.FT)
@@ -190,7 +206,7 @@ class TestFiberSight(unittest.TestCase):
 	def test_Rat_Brightfield(self):
 		if not os.path.exists(self.exp3["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp3["image_path"], channel_list=self.exp3["channel_list"], is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp3["image_path"], channel_list=self.exp3["channel_list"], auto_confirm=True)
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertFalse(analysis.FT)
@@ -199,7 +215,7 @@ class TestFiberSight(unittest.TestCase):
 	def test_Human_Crop(self):
 		if not os.path.exists(self.exp4["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp4["image_path"], channel_list=self.exp4["channel_list"], is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp4["image_path"], channel_list=self.exp4["channel_list"], auto_confirm=True)
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertTrue(analysis.FT)
@@ -208,7 +224,7 @@ class TestFiberSight(unittest.TestCase):
 	def test_Human_Full(self):
 		if not os.path.exists(self.exp5["image_path"]):
 			self.skipTest("Path does not exist")
-		analysis = run_FiberSight(input_image_path=self.exp5["image_path"], channel_list=self.exp5["channel_list"], is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp5["image_path"], channel_list=self.exp5["channel_list"], auto_confirm=True)
 		self.assertTrue(analysis.Morph)
 		self.assertFalse(analysis.CN)
 		self.assertTrue(analysis.FT)
@@ -219,14 +235,14 @@ class TestFiberSight(unittest.TestCase):
 			self.skipTest("Path does not exist")
 			
 		for model in ["cyto3", "PSR_9", "WGA_21", "HE_30"]:
-			analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model=model, is_testing=True)
+			analysis = run_FiberSight(input_image_path=self.exp6["image_path"], channel_list=self.exp6["channel_list"], cp_model=model, auto_confirm=True)
 			self._check_paths(analysis)
 	
 	def test_HE_Mouse(self):
 		if not os.path.exists(self.exp7["image_path"]):
 			self.skipTest("Path does not exist")
 			
-		analysis = run_FiberSight(input_image_path=self.exp7["image_path"], channel_list=self.exp7["channel_list"], cp_model="cyto3", is_testing=True)
+		analysis = run_FiberSight(input_image_path=self.exp7["image_path"], channel_list=self.exp7["channel_list"], cp_model="cyto3", auto_confirm=True)
 		self._check_paths(analysis)
 
 	def tearDown(self):
@@ -257,6 +273,7 @@ def run_tests():
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileNamerBad))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellpose))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDownloadModel))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCN))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCellposeFluorescence))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFiberSight))
 #	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestRoiModification))

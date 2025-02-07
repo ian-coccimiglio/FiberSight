@@ -21,14 +21,15 @@ def save_configurations(analysis, channels, fs, ANALYSIS_CONFIG):
 	peripheral_rois = "True" if ANALYSIS_CONFIG["remove_fibers_outside_border"] else "False"
 	channel_order = "; ".join([channel for channel in channels if channel is not None])
 	IJ.log("### Saving configurations ###")
-	analysis.namer.create_directory("config")	
+	analysis.namer.create_directory("config")
+	
 	general_params = OrderedDict([
 	("[GENERAL] Date and time of analysis", datetime.now().replace(microsecond=0)),
 	("[GENERAL] Image Path", fs.get_image_path()),
 	("[GENERAL] ROI Path", analysis.fiber_roi_path),
 	("[GENERAL] Channel Order", channel_order), 
 	("[GENERAL] Pixel Scale", analysis.imp_scale), 
-	("[GENERAL] Units", "microns"),
+	("[GENERAL] Image Physical Units", analysis.imp.getCalibration().units),
 	("[QC] ROI-Size-Cutoff", ROI_size_cutoff),
 	("[QC] Remove Fibers Outside Border", peripheral_rois),
 	("[MORPHOLOGY] Cellpose Diameter", ANALYSIS_CONFIG["cellpose_diam"]),
@@ -49,17 +50,16 @@ def save_configurations(analysis, channels, fs, ANALYSIS_CONFIG):
 	IJ.saveString(IJ.getLog(), analysis.namer.config_path)
 	return general_params
 
-
-def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_testing=False):
-	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, is_testing=is_testing)
-	updateProgress(0.0)
+def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, auto_confirm=False):
+	fs = FiberSight_GUI(input_image_path=input_image_path, channel_list=channel_list, cp_model=cp_model, auto_confirm=auto_confirm)
 	try:
 		if fs.close_control.terminated:
 			return False
 	except Exception as e:
 		IJ.log("Error during cleanup: {}".format(e))
 		sys.exit(1)
-	IJ.log("\\Clear")	
+	IJ.log("\\Clear")
+	updateProgress(0.0)
 	
 	image_path = fs.get_image_path()
 	roi_path = fs.get_roi_path()
@@ -127,8 +127,9 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		overlay_image.hide()
 		analysis.border_channel.hide()
 		rm_test = convertLabelsToROIs(edgeless)
+		analysis.namer.create_directory("border_exclusion")
+		rm_test.save(analysis.namer.excluded_border_fiber_rois_path)
 		edgeless.hide()
-		# TODO: Save these ROIs #
 
 	if analysis.Morph:
 		updateProgress(0.5)
@@ -154,9 +155,11 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 		analysis.namer.create_directory("masks")
 		for channel in analysis.ft_channels:
 			ch_title = channel.getTitle()
-			area_frac["{}_%-Area".format(ch_title)], channel_dup = fiber_type_channel(channel,  \\
-			analysis.rm_fiber, blur_radius=ANALYSIS_CONFIG["blur_radius"], threshold_method=ANALYSIS_CONFIG["threshold_method"], \\
-			image_correction=ANALYSIS_CONFIG["image_correction"], drawn_border_roi=analysis.drawn_border_roi)
+			area_frac["{}_%-Area".format(ch_title)], channel_dup = fiber_type_channel(channel,
+				analysis.rm_fiber, 
+				blur_radius=ANALYSIS_CONFIG["blur_radius"], 
+				threshold_method=ANALYSIS_CONFIG["threshold_method"],
+				image_correction=ANALYSIS_CONFIG["image_correction"], drawn_border_roi=analysis.drawn_border_roi)
 			channel_dup.show()
 			save_fibertype_mask(channel_dup, analysis, ANALYSIS_CONFIG["threshold_method"], ANALYSIS_CONFIG["image_correction"])
 
@@ -188,7 +191,6 @@ def run_FiberSight(input_image_path=None, channel_list=None, cp_model=None, is_t
 	analysis.save_results()
 	analysis.create_figures(central_rois, identified_fiber_types=identified_fiber_types, central_fibers=analysis.central_fibers, percReductions=analysis.percReductions)
 	updateProgress(1)
-	# analysis.save_metadata() TODO
 	save_configurations(analysis, channels, fs, ANALYSIS_CONFIG)
 	return analysis
 
@@ -197,5 +199,5 @@ if __name__ in ['__builtin__','__main__']:
 	closeAll()
 	home_dir = os.path.expanduser("~")
 	exp = setup_experiment(os.path.join(home_dir, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif"), ["DAPI", "Type I", "Type IIa", "Fiber Border"])
-	analysis, results = run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], is_testing=False)
+	analysis = run_FiberSight(input_image_path=exp["image_path"], channel_list=exp["channel_list"], auto_confirm=True)
 	# analysis = run_FiberSight()
