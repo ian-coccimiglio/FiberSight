@@ -64,7 +64,7 @@ Additional options are available too if you select the Advanced options checkbox
 ![](assets/images/DAPI_Gradient_Nucleation.jpeg)
 *Output gradient nucleation image. Increasing red: More centrally nucleated. Increasing green: More peripherally nucleated. 
 
-![](assets/images/Fiber_Typing.jpeg)
+![](assets/images/Fibertype_Montage.jpeg)
 
 FiberSight then executes a series of operations to determine each skeletal muscle fiber's morphology, nucleation state, and/or fiber type. Roughly, the following steps are taken in this order:
 1) Opens the input image channels and assign them accordingly
