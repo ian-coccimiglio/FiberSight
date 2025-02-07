@@ -78,6 +78,7 @@ def make_excluded_edges(label_image, roi):
 	
 def open_exclusion_files(base_image_path_str, border_roi_path_str, fiber_rois_path_str, selected_channel=3):
 	IJ.log("-----")
+	IJ.log("Running border exclusion on image: {}".format(os.path.basename(base_image_path_str)))
 	IJ.log("### Opening raw image ###")
 	imp_raw = read_image(base_image_path_str)
 	if detectMultiChannel(imp_raw):

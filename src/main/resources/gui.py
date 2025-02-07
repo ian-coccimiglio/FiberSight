@@ -219,7 +219,7 @@ class FiberSight_GUI(WindowAdapter):
                 if channel in self.CHANNEL_OPTIONS:
                     self.channels.extend([self._place_channel_dropdown(self.bottomPanel, str(channel), enum+1)])
                 else:
-                    return None
+                   self.channels.extend([self._place_channel_dropdown(self.bottomPanel, "None", enum+1)])
         else:
             IJ.error("Invalid list of channels")
             return None
@@ -428,7 +428,7 @@ class FiberSight_GUI(WindowAdapter):
             fp_field.setBackground(Color.white)
             if not is_valid:
                 fp_field.setBackground(YELLOW)
-                create_folder = IJ.showMessage("Fix image path", correction_message)
+                create_folder = IJ.error("Fix image path", correction_message)
             elif fp_field.text.endswith(expectedFormats) and os.path.exists(fp_field.text):
                 fp_field.setBackground(VERY_LIGHT_GREEN)
             else:

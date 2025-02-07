@@ -1,18 +1,18 @@
+#@ String(visibility=MESSAGE, value="<html><b>ROI Border Drawing Tool (Batch)</b></html>") read_msg
+#@ String(visibility=MESSAGE, value="<html>This tool will save only the <b>first</b> ROI in each ROI Manager <br>This ROI should not self-intersect</br><br>Downstream analysis will exclude muscle fibers outside this ROI</br></html>") roi_msg
 #@ File (label = "Select a directory containing raw images", style="directory", persist=true) my_dir
 
 from ij import IJ
-import os
 from jy_tools import closeAll
 from image_tools import batch_open_images
-from file_naming import FileNamer
+from script_modules import draw_border
 
 IJ.log("\n### Drawing Skeletal Muscle Border ###")
-raw_files = batch_open_images(my_dir.getPath())
+image_paths = batch_open_images(my_dir.getPath())
 
-for raw_file in raw_files:
-	namer = FileNamer(raw_file)
+for image_path in image_paths:
 	IJ.run("Close All")
 	closeAll()
-	IJ.run("Draw Border", "raw_path='{}'".format(namer.image_path))
+	draw_border(image_path)
 	
 IJ.log("Done!")

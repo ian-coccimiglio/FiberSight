@@ -94,7 +94,7 @@ class CZIopener:
 		cs.setId(self.file_path)
 		return cs
 
-def batch_open_images(path, file_type=[".tif", ".nd2", ".png"], name_filter=None, recursive=False):
+def batch_open_images(path, file_type=[".tif", ".czi", ".tiff", ".TIF", ".TIFF",  ".nd2", ".png"], name_filter=None, recursive=False):
 	'''Open all files in the given folder.
 	:param path: The path from where to open the images. String and java.io.File are allowed.
 	:param file_type: Only accept files with the given extension (default: None).
@@ -334,6 +334,7 @@ def detectMultiChannel(image):
 
 def convertLabelsToROIs(imp_labels):
 	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
+		pickImage(imp_labels.title, sleep_time=0.25)
 		IJ.run(imp_labels, "Label image to ROIs", "rm=[RoiManager[visible=true]]")
 		rm = RoiManager()
 		rm_fiber = rm.getRoiManager()
@@ -404,10 +405,10 @@ def runCellpose(image,
 	
 	return cellpose_str
 		
-def pickImage(image):
-	sleep(0.1)
+def pickImage(image, sleep_time=0.1):
+	sleep(sleep_time)
 	IJ.selectWindow(image)
-	sleep(0.1)
+	sleep(sleep_time)
 	return IJ.getImage()
 
 def getMyosightParameters():

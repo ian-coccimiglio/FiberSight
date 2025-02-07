@@ -45,11 +45,11 @@ class FileNamer:
 		self.image_path = image_path
 		self.image_name = os.path.basename(image_path)
 		self.image_dir = os.path.dirname(image_path)
+		self.base_name = self.remove_extension()
 		self.experiment_dir = os.path.dirname(self.image_dir)
 		self.border_exclusion_dir = self.get_directory("border_exclusion")
 		self.masks_dir = self.get_directory("masks")
 		self.figures_dir = self.get_directory("figures")
-		self.base_name = self.remove_extension()
 		self.border_path = self.get_path("border_roi")
 		self.fiber_roi_path = self.get_path("fiber_rois")
 		self.results_path = self.get_path("results")

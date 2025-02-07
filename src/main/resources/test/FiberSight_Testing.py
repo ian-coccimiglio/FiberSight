@@ -57,7 +57,6 @@ class TestAnalysisSetup(unittest.TestCase):
 	   
 	def tearDown(self):
 		self.setup.rm_fiber.close()
-		WM.getWindow("Log").close()		
 
 class TestDownloadModel(unittest.TestCase):
 	def setUp(self):
