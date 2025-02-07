@@ -42,7 +42,6 @@ Notes:
 </p>
 
 <p align="center">
-    <img width="400" src="assets/images/PSR_Morphology.jpeg" alt="Output morphological image, muscle fibers highlighted in red">
     <img width="400" src="assets/images/FiberSight_Central_Nucleation.jpg" alt="Centronucleation image. Positions of nuclei are indicated with red lines, central nucleation region indicated by yellow border">
     <br>
     <em>(Left) Morphology of mouse skeletal muscle fibers stained with Picosirius Red and visualized under brightfield. <br> (Right) Fluorescence image of central nucleation of muscle fibers stained for DAPI (Blue) and Laminin (Magenta). Numbers indicate number of central nuclei.</em>
