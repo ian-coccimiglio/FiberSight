@@ -13,7 +13,6 @@ from jy_tools import linPrint, dprint, checkPixel, closeAll, wf, attrs, windowFi
 from jy_tools import dirMake, saveFigure, pd, listProperties, resTable, userWait
 from javax.swing import JToggleButton
 from java.io import File
-from utilities import download_model
 from loci.formats import ChannelSeparator
 from time import sleep
 
@@ -243,14 +242,6 @@ def split_string(input_string):
 	# Remove whitespace at the beginning and end of each string
 	strings_striped = [string.strip() for string in string_splitted]
 	return strings_striped
-
-#def loadMicroscopeImage(image_path):
-#	''' Loads a microscope image '''
-#	print "File Directory =", image_path
-#	args = "open='{}' autoscale color_mode=Default display_rois rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT".format(image_path)
-#	IJ.run("Bio-Formats Importer", args)
-#	imp = IJ.getImage()
-#	return imp
 	
 def loadMicroscopeImage(image_path, slicenum = 2):
 	''' Loads a microscope image from a path, and allows you to specify a specific slice '''
@@ -342,68 +333,6 @@ def convertLabelsToROIs(imp_labels):
 	else:
 		print "Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/"
 		return None
-
-def find_cellpose_env(homedir):
-	
-	possible_paths = [
-		os.path.join(homedir, "miniconda3", "envs", "cellpose"),
-		os.path.join(homedir, "miniconda", "envs", "cellpose"),
-		os.path.join(homedir, "anaconda3", "envs", "cellpose")
-	]
-	for path in possible_paths:
-		IJ.log("Checking path at {}".format(path))
-		if os.path.exists(path):
-			IJ.log("Found cellpose environment")
-			return path
-			break
-	else:
-		IJ.error("Cellpose environment not found", "Checked typical paths,\nEnsure to install Cellpose and set the appropriate env_path")
-		return False
-
-def runCellpose(image, 
-	env_path=None,
-	model_path = "", 
-	env_type = "conda", 
-	diameter=30, 
-	cellprob_threshold=0.0, 
-	flow_threshold=0.4, 
-	ch1=0, 
-	ch2=0):
-	
-	# IJ.showProgress(0.5)
-	if env_path is None:
-		env_path = find_cellpose_env(os.path.expanduser("~"))
-	elif not os.path.exists(env_path):
-		IJ.error("Cellpose environment not found", "Checked path at {},\nEnsure to install Cellpose and set the appropriate env_path".format(env_path))
-		return False
-	
-	additional_flags = "[--use_gpu, --cellprob_threshold, {}, --flow_threshold, {}]".format(cellprob_threshold, flow_threshold)
-	
-	if 'BIOP' in os.listdir(IJ.getDirectory("plugins")):
-		try:
-			model_name = os.path.basename(model_path)
-			if not model_path:
-				model="cyto3"
-			elif os.path.exists(model_path) and model_name != "cyto3":
-				model=""
-			elif model_name == "cyto3":
-				model="cyto3"
-			else:
-				model_path = download_model(model_name)
-				if not model_path:
-					return False
-				model=""
-			cellpose_str = "env_path={} env_type={} model={} model_path={} diameter={} ch1={} ch2={} additional_flags={}".format(env_path, env_type, model, model_path, diameter, ch1, ch2, additional_flags)
-			IJ.log("Running Cellpose model: {}".format(model_name))
-			IJ.run(image, "Cellpose ...", cellpose_str)
-
-		except Exception as e:
-			IJ.log(e)
-			
-	else:
-		IJ.log("Make sure to install the BIOP plugin to use the Cellpose autoprocessor. Find it here https://github.com/BIOP/ijl-utilities-wrappers/")
-	
-	return cellpose_str
 		
 def pickImage(image, sleep_time=0.1):
 	sleep(sleep_time)
@@ -453,26 +382,6 @@ def getMyosightParameters():
 	
 	dprint(paramDict) # print the dictionary
 	return paramDict
-
-
-
-
-def determine_dominant_fiber(dom_list, channel_keys, lrow, positivity_threshold = 50):
-	ck_names = [ck.split('_%')[0].split("MHC")[1] for ck in channel_keys]
-	if lrow[0] >= positivity_threshold: # Type 1
-		dom_list.append(ck_names[0])
-	elif lrow[2] >= positivity_threshold: 
-		if lrow[1] >= positivity_threshold:
-			dom_list.append(ck_names[2]+"/"+ck_names[1]) # Type IIa/IIX
-		else:
-			dom_list.append(ck_names[2]) # Type IIa
-	elif lrow[2] < positivity_threshold:
-		if lrow[1] >= positivity_threshold:
-			dom_list.append(ck_names[1]) # Type IIx
-		else:
-			dom_list.append("UND") # Type UND
-			
-	return dom_list
 
 def generateCheckDialog(title,checktext):
 	'''Generates a dialog with a single checkbox with message `checktext` '''

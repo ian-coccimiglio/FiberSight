@@ -2,12 +2,11 @@
 #@ File (label="Select an ROI Border", style="file") border_roi_path
 #@ File (label="Select ROIs delineating fibers", style="file") fiber_rois_path
 
-from ij import IJ, WindowManager as WM
-from ij import Prefs
+from ij import IJ, Prefs, WindowManager as WM
 from ij.plugin.frame import RoiManager
 import os, sys
-from jy_tools import closeAll, attrs, saveFigure, reload_modules
-from ij.gui import PolygonRoi, Roi
+from jy_tools import closeAll, saveFigure, reload_modules
+from ij.gui import Roi
 from ij.plugin import ImageCalculator
 from ij.io import Opener
 from ij.plugin import RoiEnlarger, ChannelSplitter
