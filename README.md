@@ -36,6 +36,12 @@ Notes:
 ## Outputs ##
 
 <p align="center">
+    <img width="400" src="assets/images/Results_Spreadsheet.png" alt="Results">
+    <br>
+    <em>(Left) Output results spreadsheet of an image stained with DAPI, Type I, Type IIa, and Laminin (Fiber Border).</em>
+</p>
+
+<p align="center">
     <img width="400" src="assets/images/PSR_Morphology.jpeg" alt="Output morphological image, muscle fibers highlighted in red">
     <img width="400" src="assets/images/FiberSight_Central_Nucleation.jpg" alt="Centronucleation image. Positions of nuclei are indicated with red lines, central nucleation region indicated by yellow border">
     <br>
