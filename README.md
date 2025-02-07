@@ -58,13 +58,14 @@ Additional options are available too if you select the Advanced options checkbox
 ![](assets/images/PSR_Morphology.jpeg)
 *Output morphological image, muscle fibers highlighted in red*
 
-![](assets/images/DAPI_Centronucleation.jpeg)
-*Output centronucleation image, nuclei positions indicated with red lines, region of central nucleation indicated by yellow border*
+![](assets/images/FiberSight_Central_Nucleation.jpg)
+*Centronucleation image. Positions of nuclei are indicated with red lines, central nucleation region indicated by yellow border*
 
-![](assets/images/DAPI_Gradient_Nucleation.jpeg)
-*Output gradient nucleation image. Increasing red: More centrally nucleated. Increasing green: More peripherally nucleated. 
+![](assets/images/FiberSight_Gradient_Nucleation.jpg)
+*Gradient nucleation image. Increasing red: More centrally nucleated. Increasing green: More peripherally nucleated. 
 
 ![](assets/images/Fibertype_Montage.jpeg)
+*FiberSight categorizes muscle fibers from multiple thresholded fluorescence signals into specific categorizations.
 
 FiberSight then executes a series of operations to determine each skeletal muscle fiber's morphology, nucleation state, and/or fiber type. Roughly, the following steps are taken in this order:
 1) Opens the input image channels and assign them accordingly
