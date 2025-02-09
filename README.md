@@ -10,6 +10,8 @@ The following three major functionalities are provided:
 2) Skeletal muscle fiber nucleation state (Central/Peripheral/Total nuclei)
 3) Skeletal muscle fiber-typing (Type I, IIa, IIx, IIb), as well as hybrid (Type I/IIa, IIa/IIx, IIx/IIb)
 
+If you have any feedback or comments, reach out to me at icoccimi@gmail.com, or send me a message on GitHub.
+
 ## Installation ##
 1) Open FIJI, navigate to Help\>Update...
 2) Select "Manage Update Sites"
