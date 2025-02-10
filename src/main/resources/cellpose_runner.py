@@ -150,7 +150,7 @@ class CellposeRunner:
 
 # real way:
 if __name__ in ['__builtin__','__main__']:
-	runner = CellposeRunner(model_name="WGA_21", segmentation_channel=3)
+	runner = CellposeRunner(model_name="PSR_9", segmentation_channel=3)
 	file_path = os.path.join(runner.HOMEDIR, "Documents/Jython/FiberSight/src/main/resources/test/test_experiment_fluorescence/raw/skm_rat_R7x10ta.tif")
 	runner.set_image(file_path)
 	runner.run_cellpose()

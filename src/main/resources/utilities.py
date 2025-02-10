@@ -71,9 +71,6 @@ def get_model_path(model_name):
 	Returns a local model path corresponding to the Cellpose standard path (usually in the ~/.cellpose/models/ directory)
 	"""
 	model_path = os.path.join(HOMEDIR, ".cellpose/models/", model_name)
-	if not os.path.exists(model_path):
-		download_model(model_name)
-	
 	return model_path
 
 def download_model(model_name):
@@ -83,7 +80,7 @@ def download_model(model_name):
 	
 	if model_name not in CELLPOSE_FINETUNED_MODELS and model_name not in CELLPOSE_DEFAULT_MODELS:
 		raise RuntimeError("Error: {} is not a known model".format(model_name))
-		
+
 	model_path = get_model_path(model_name)
 	model_dir = os.path.dirname(model_path)
 	if not os.path.exists(model_dir):
