@@ -20,6 +20,7 @@ from ij import IJ
 from jy_tools import closeAll
 from image_tools import batch_open_images, split_string
 from script_modules import cellpose_image
+import os
 
 IJ.log("### Running Cellpose Batch mode ###")
 
@@ -33,6 +34,10 @@ def main():
 								split_string(filters),
 								do_recursive
 								)
+	
+	for path in os.listdir(raw_dir.path):
+		if path not in image_paths:
+			IJ.log("Skipping file {}, skipped by image filter settings".format(path))
 	
 	for image_path in image_paths:
 		IJ.run("Close All")
